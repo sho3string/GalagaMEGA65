@@ -77,7 +77,7 @@ begin
    -- @TODO: Add the actual MiSTer core here
    -- The demo core's purpose is to show a test image and to make sure, that the MiSTer2MEGA65 framework
    -- can be synthesized and run stand-alone without an actual MiSTer core being there, yet
-   i_democore : entity work.democore
+ /*  i_democore : entity work.democore
       port map (
          clk_main_i           => clk_main_i,
          
@@ -124,6 +124,7 @@ begin
    -- might need small high-active keyboard memories, etc. This is why the MiSTer2MEGA65 framework
    -- lets you define literally everything and only provides a minimal abstraction layer to the keyboard.
    -- You need to adjust keyboard.vhd to your needs
+*/
    i_keyboard : entity work.keyboard
       port map (
          clk_main_i           => clk_main_i,
