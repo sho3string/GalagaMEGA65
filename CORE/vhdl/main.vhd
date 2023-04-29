@@ -26,6 +26,12 @@ entity main is
       -- MiSTer core main clock speed:
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
       clk_main_speed_i        : in natural;
+      
+      main_clk_o              : out std_logic;        -- Galaga's 18 MHz main clock
+      main_rst_o              : out std_logic;        -- Galaga's reset, synchronized
+        
+      video_clk_o             : out std_logic;        -- video clock 48 MHz
+      video_rst_o             : out std_logic;        -- video reset, synchronized
 
       -- Video output
       video_ce_o              : out std_logic;
@@ -38,7 +44,8 @@ entity main is
       video_hs_o              : out std_logic;
       video_hblank_o          : out std_logic;
       video_vblank_o          : out std_logic;
-
+      
+     
       -- Audio output (Signed PCM)
       audio_left_o            : out signed(15 downto 0);
       audio_right_o           : out signed(15 downto 0);
@@ -72,7 +79,122 @@ architecture synthesis of main is
 -- @TODO: Remove these demo core signals
 signal keyboard_n          : std_logic_vector(79 downto 0);
 
+signal pause_cpu         : std_logic; -- to do later
+signal status            : signed(31 downto 0);
+signal flip_screen       : std_logic := status(8);
+signal flip              : std_logic := '0';
+signal video_rotated     : std_logic;
+signal rotate_ccw        : std_logic := flip_screen;
+signal direct_video      : std_logic;
+signal forced_scandoubler: std_logic;
+signal no_rotate         : std_logic := status(2) OR direct_video;
+signal gamma_bus         : std_logic_vector(21 downto 0);
+
+signal audio             : std_logic_vector(15 downto 0);
+signal AUDIO_L           : std_logic_vector(15 downto 0) := audio;
+signal AUDIO_R           : std_logic_vector(15 downto 0) := AUDIO_L;
+signal AUDIO_S           : std_logic_vector(15 downto 0) := (others => '0');
+
+
+-- horizontal blank, vertical blank, vertical sync & horizontal sync signals.
+signal hbl,vbl,vs,hs     : std_logic;
+ -- red, green, blue
+signal r,g                : std_logic_vector(2 downto 0); -- 3 bits for red and green
+signal b                  : std_logic_vector(1 downto 0); -- 2 bits for blue
+
+-- dipswitches
+type dsw_type is array (0 to 3) of std_logic_vector(7 downto 0); -- each dipswitch is 8 bits wide.
+signal dsw : dsw_type;
+
+signal ioctl_download : std_logic;
+signal ioctl_wr       : std_logic;
+signal ioctl_addr     : std_logic_vector(24 downto 0);
+signal ioctl_dout     : std_logic_vector(7 downto 0);
+signal ioctl_index  : std_logic_vector(7 downto 0);
+
+signal rom_download : std_logic := ioctl_download and not std_logic(ioctl_index(0));
+
+-- inputs
+
+-- I/O board button press simulation ( active high )
+-- b[1]: user button
+-- b[0]: osd button
+
+signal buttons           : std_logic_vector(1 downto 0);
+signal reset             : std_logic  := reset_hard_i or reset_soft_i or status(0) or buttons(1) or rom_download;
+signal  joystick_0,joystick_1 : std_logic_vector(15 downto 0);
+signal  joy : std_logic_vector(15 downto 0) := joystick_0 or joystick_1;
+
+signal  m_up    : std_logic := joy(3);
+signal  m_down  : std_logic := joy(2);
+signal  m_left  : std_logic := joy(1);
+signal  m_right : std_logic := joy(0);
+signal  m_fire  : std_logic := joy(4);
+signal  m_start1: std_logic := joystick_0(5) or joystick_1(6);
+signal  m_start2: std_logic := joystick_1(5) or joystick_0(6);
+signal  m_coin1 : std_logic := joystick_0(7);
+signal  m_coin2 : std_logic := joystick_1(7);
+signal  m_pause : std_logic := joy(8);
+
+-- highscore system
+signal hs_address : std_logic_vector(15 downto 0);
+signal hs_data_in : std_logic_vector(7 downto 0);
+signal hs_data_out : std_logic_vector(7 downto 0);
+signal hs_write_enable : std_logic;
+
+
 begin
+
+    i_galaga : entity work.galaga
+    port map (
+    
+    clock_18   => main_clk_o,
+    --reset      => reset,
+    reset      => main_rst_o,
+    
+    dn_addr    => ioctl_addr(15 downto 0), -- MiSTer core had 16:0 ,is that a typo ?
+    dn_data    => ioctl_dout,
+    dn_wr      => ioctl_wr and rom_download,
+    
+    video_r    => r,
+    video_g    => g,
+    video_b    => b,
+    
+    --video_csync => open,
+    video_hs    => hs,
+    video_vs    => vs,
+    blank_h     => hbl,
+    blank_v     => vbl,
+    
+    audio       => audio,
+    
+    self_test  => dsw(2)(0),
+    service    => dsw(2)(1),
+    coin1      => m_coin1,
+    coin2      => m_coin2,
+    start1     => m_start1,
+    start2     => m_start2,
+    up1        => m_up,
+    down1      => m_down,
+    left1      => m_left,
+    right1     => m_right,
+    fire1      => m_fire,
+    up2        => m_up,
+    down2      => m_down,
+    left2      => m_left,
+    right2     => m_right,
+    fire2      => m_fire,
+    dip_switch_a    => not dsw(0),
+    dip_switch_b    => not dsw(1),
+    h_offset   => status(27 downto 24),
+    v_offset   => status(31 downto 28),
+    pause      => pause_cpu,
+    
+    hs_address => hs_address,
+    hs_data_out => hs_data_out,
+    hs_data_in => hs_data_in,
+    hs_write   => hs_write_enable
+ );
 
    -- @TODO: Add the actual MiSTer core here
    -- The demo core's purpose is to show a test image and to make sure, that the MiSTer2MEGA65 framework
