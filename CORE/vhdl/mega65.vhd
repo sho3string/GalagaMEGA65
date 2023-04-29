@@ -347,7 +347,7 @@ begin
         
             WIDTH => 288,   -- screen width in pixels ( ROT90 )
             DW    => 8,     -- each character is 8 pixels x 8 pixels
-            GAMMA => 1
+            GAMMA => 0      -- @TODO: Deactivated to start with; we might need to reactivate later
         )         
      port map (
         clk_video_i         => video_clk,             -- video clock 48 MHz
