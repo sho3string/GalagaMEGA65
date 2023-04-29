@@ -246,7 +246,6 @@ begin
    --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
    -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-   main_video_ce_o         <= ce_pix;
    main_video_ce_ovl_o     <= '1';
    main_video_retro15kHz_o <= '0';
 
