@@ -24,8 +24,11 @@ port (
    RESET_M2M_N             : in std_logic;         -- Debounced system reset in system clock domain
 
    -- Share clock and reset with the framework
-   main_clk_o              : out std_logic;        -- CORE's 54 MHz clock
-   main_rst_o              : out std_logic;        -- CORE's reset, synchronized
+   main_clk_o              : out std_logic;        -- Galaga's 18 MHz main clock
+   main_rst_o              : out std_logic;        -- Galaga's reset, synchronized
+   
+   video_clk_o             : out std_logic;        -- video clock 48 MHz
+   video_rst_o             : out std_logic;        -- video reset, synchronized
 
    --------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain
@@ -85,7 +88,10 @@ port (
    main_video_hs_o         : out std_logic;
    main_video_hblank_o     : out std_logic;
    main_video_vblank_o     : out std_logic;
-
+   main_video_de_o         : out std_logic;
+   vga_sl_o                : out std_logic_vector(1 downto 0);
+   rgb_out_o               : out std_logic_vector(7 downto 0);
+   
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
    main_audio_right_o      : out signed(15 downto 0);
@@ -147,6 +153,10 @@ architecture synthesis of MEGA65_Core is
 signal main_clk               : std_logic;               -- Core main clock
 signal main_rst               : std_logic;
 
+signal video_clk              : std_logic;               
+signal video_rst              : std_logic;
+
+
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
@@ -173,6 +183,42 @@ signal qnice_demo_vd_data_o   : std_logic_vector(15 downto 0);
 signal qnice_demo_vd_ce       : std_logic;
 signal qnice_demo_vd_we       : std_logic;
 
+
+-- Galaga specific
+signal ce_pix                    : std_logic;
+signal HSync,VSync,HBlank,VBlank : std_logic;
+signal div : std_logic_vector(2 downto 0);
+signal dim_video                 : std_logic;
+
+-- horizontal blank, vertical blank, vertical sync & horizontal sync signals.
+signal hbl,vbl,vs,hs             : std_logic;
+-- red, green, blue
+signal r,g                       : std_logic_vector(2 downto 0); -- 3 bits for red and green
+signal b                         : std_logic_vector(1 downto 0); -- 2 bits for blue
+
+signal status                    : signed(31 downto 0);
+signal forced_scandoubler        : std_logic;
+signal gamma_bus                 : std_logic_vector(21 downto 0);
+
+signal direct_video      : std_logic;
+signal flip              : std_logic := '0';
+signal video_rotated     : std_logic;
+signal flip_screen       : std_logic := status(8);
+signal no_rotate         : std_logic := status(2) OR direct_video;
+signal rotate_ccw        : std_logic := flip_screen;
+
+-- use framebuffer in ddram.
+signal    FB_EN               : std_logic;
+signal    FB_FORMAT           : std_logic_vector(4 downto 0);
+signal    FB_WIDTH            : std_logic_vector(11 downto 0);
+signal    FB_HEIGHT           : std_logic_vector(11 downto 0);
+signal    FB_BASE             : std_logic_vector(31 downto 0);
+signal    FB_STRIDE           : std_logic_vector(13 downto 0);
+signal    FB_FORCE_VBLANK     : std_logic;
+signal    FB_VBL              : std_logic; 
+signal    FB_LL               : std_logic;
+
+
 begin
 
    -- MMCME2_ADV clock generators:
@@ -181,12 +227,40 @@ begin
       port map (
          sys_clk_i         => CLK,             -- expects 100 MHz
          sys_rstn_i        => RESET_M2M_N,     -- Asynchronous, asserted low
-         main_clk_o        => main_clk,        -- CORE's 54 MHz clock
-         main_rst_o        => main_rst         -- CORE's reset, synchronized
+         
+         main_clk_o        => main_clk,        -- Galaga's 18 MHz main clock
+         main_rst_o        => main_rst,        -- Galaga's reset, synchronized
+         
+         video_clk_o       => video_clk,       -- video clock 48 MHz
+         video_rst_o       => video_rst        -- video reset, synchronized
+      
       ); -- clk_gen
 
-   main_clk_o <= main_clk;
-   main_rst_o <= main_rst;
+   main_clk_o   <= main_clk;
+   main_rst_o   <= main_rst;
+   video_clk_o  <= video_clk;
+   video_rst_o  <= video_rst;
+   
+
+    process (video_clk_o)
+        begin
+        if rising_edge(video_clk_o) then
+             div <= std_logic_vector(unsigned(div) + 1);
+             ce_pix <= not (div(0) xor div(1) xor div(2));
+             if dim_video = '1' then
+                rgb_out_o <= std_logic_vector(resize(unsigned(r) srl 1, 3)) & 
+                             std_logic_vector(resize(unsigned(g) srl 1, 3)) & 
+                             std_logic_vector(resize(unsigned(b) srl 1, 2));
+             else
+                rgb_out_o <= std_logic_vector(r) & std_logic_vector(g) & std_logic_vector(b);
+             end if;      
+        end if; 
+        
+        HSync <= not hs;
+        VSync <= not vs;
+        HBlank <= hbl;
+        VBlank <= vbl;  
+    end process;
 
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -245,7 +319,73 @@ begin
          pot2_y_i             => main_pot2_y_i     
       ); -- i_main
 
-   ---------------------------------------------------------------------------------------------
+    -- screen rotate
+
+    i_screen_rotate : entity work.screen_rotate
+    port map (
+  
+    --inputs
+    CLK_VIDEO  => video_clk_o,
+    CE_PIXEL   => main_video_ce_o,
+    VGA_R      => main_video_red_o,
+    VGA_G      => main_video_green_o,
+    VGA_B      => main_video_blue_o,
+    VGA_HS     => main_video_hs_o,
+    VGA_VS     => main_video_vs_o,
+    VGA_DE     => main_video_de_o,
+    rotate_ccw => rotate_ccw,
+    no_rotate  => no_rotate,
+    flip       => flip,
+    FB_VBL     => FB_VBL,
+    FB_LL      => FB_LL,
+    
+    DDRAM_BUSY => '0', -- set this to 0 for now
+    -- outputs
+    video_rotated => video_rotated,
+    FB_EN        => FB_EN,
+    
+    FB_FORMAT    => FB_FORMAT,
+    FB_WIDTH     => FB_WIDTH,
+    FB_HEIGHT    => FB_HEIGHT,
+    FB_BASE      => FB_BASE,     
+    FB_STRIDE    => FB_STRIDE
+    
+  
+  );
+  
+    --arcade video
+
+    i_arcade_video : entity work.arcade_video
+        generic map (
+        
+            WIDTH => 288,   -- screen width in pixels ( ROT90 )
+            DW    => 8,     -- each character is 8 pixels x 8 pixels
+            GAMMA => 1
+        )
+        
+     port map (
+        clk_video_i         => video_clk,       -- video clock 48 MHz
+        ce_pix              => ce_pix,
+        RGB_in              => rgb_out_o,
+        HBlank              => HBlank,
+        VBlank              => VBlank,
+        HSync               => HSync,
+        VSync               => VSync,
+        CLK_VIDEO_o         => video_clk,       -- video clock 48 Mhz
+        CE_PIXEL            => main_video_ce_o,
+        VGA_R               => main_video_red_o,
+        VGA_G               => main_video_green_o,
+        VGA_B               => main_video_blue_o,
+        VGA_HS              => main_video_hs_o,
+        VGA_VS              => main_video_vs_o,
+        VGA_DE              => main_video_de_o,
+        VGA_SL              => vga_sl_o,
+        fx                  => status(5 downto 3),
+        forced_scandoubler  => forced_scandoubler,
+        gamma_bus           => gamma_bus
+        
+     );
+       ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
 
