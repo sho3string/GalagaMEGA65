@@ -89,8 +89,6 @@ port (
    main_video_hblank_o     : out std_logic;
    main_video_vblank_o     : out std_logic;
    main_video_de_o         : out std_logic;
-   vga_sl_o                : out std_logic_vector(1 downto 0);
-   rgb_out_o               : out std_logic_vector(7 downto 0);
    
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
@@ -156,45 +154,18 @@ signal main_rst               : std_logic;
 signal video_clk              : std_logic;               
 signal video_rst              : std_logic;
 
-
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
 ---------------------------------------------------------------------------------------------
 
----------------------------------------------------------------------------------------------
--- qnice_clk
----------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------
--- Democore & example stuff: Delete before starting to port your own core
----------------------------------------------------------------------------------------------
-
--- Democore menu items
-constant C_MENU_HDMI_16_9_50  : natural := 9;
-constant C_MENU_HDMI_16_9_60  : natural := 10;
-constant C_MENU_HDMI_4_3_50   : natural := 11;
-constant C_MENU_HDMI_5_4_50   : natural := 12;
-constant C_MENU_CRT_EMULATION : natural := 22;
-constant C_MENU_HDMI_ZOOM     : natural := 23;
-constant C_MENU_IMPROVE_AUDIO : natural := 24;
-
--- QNICE clock domain
-signal qnice_demo_vd_data_o   : std_logic_vector(15 downto 0);
-signal qnice_demo_vd_ce       : std_logic;
-signal qnice_demo_vd_we       : std_logic;
-
-
--- Galaga specific
-signal ce_pix                    : std_logic;
-signal HSync,VSync,HBlank,VBlank : std_logic;
-signal div : std_logic_vector(2 downto 0);
-signal dim_video                 : std_logic;
-
--- horizontal blank, vertical blank, vertical sync & horizontal sync signals.
-signal hbl,vbl,vs,hs             : std_logic;
--- red, green, blue
-signal r,g                       : std_logic_vector(2 downto 0); -- 3 bits for red and green
-signal b                         : std_logic_vector(1 downto 0); -- 2 bits for blue
+-- Unprocessed video output from the Galaga core
+signal main_video_red      : std_logic_vector(2 downto 0);   
+signal main_video_green    : std_logic_vector(2 downto 0);
+signal main_video_blue     : std_logic_vector(1 downto 0);
+signal main_video_vs       : std_logic;
+signal main_video_hs       : std_logic;
+signal main_video_hblank   : std_logic;
+signal main_video_vblank   : std_logic;
 
 signal status                    : signed(31 downto 0);
 signal forced_scandoubler        : std_logic;
@@ -207,17 +178,25 @@ signal flip_screen       : std_logic := status(8);
 signal no_rotate         : std_logic := status(2) OR direct_video;
 signal rotate_ccw        : std_logic := flip_screen;
 
--- use framebuffer in ddram.
-signal    FB_EN               : std_logic;
-signal    FB_FORMAT           : std_logic_vector(4 downto 0);
-signal    FB_WIDTH            : std_logic_vector(11 downto 0);
-signal    FB_HEIGHT           : std_logic_vector(11 downto 0);
-signal    FB_BASE             : std_logic_vector(31 downto 0);
-signal    FB_STRIDE           : std_logic_vector(13 downto 0);
-signal    FB_FORCE_VBLANK     : std_logic;
-signal    FB_VBL              : std_logic; 
-signal    FB_LL               : std_logic;
+---------------------------------------------------------------------------------------------
+-- qnice_clk
+---------------------------------------------------------------------------------------------
 
+-- @TODO: Change all these democore menu items
+constant C_MENU_HDMI_16_9_50  : natural := 9;
+constant C_MENU_HDMI_16_9_60  : natural := 10;
+constant C_MENU_HDMI_4_3_50   : natural := 11;
+constant C_MENU_HDMI_5_4_50   : natural := 12;
+constant C_MENU_CRT_EMULATION : natural := 22;
+constant C_MENU_HDMI_ZOOM     : natural := 23;
+constant C_MENU_IMPROVE_AUDIO : natural := 24;
+
+
+-- Galaga specific video processing
+signal rgb_out             : std_logic_vector(7 downto 0);
+signal ce_pix              : std_logic;
+signal div                 : std_logic_vector(2 downto 0);
+signal dim_video           : std_logic;
 
 begin
 
@@ -241,26 +220,35 @@ begin
    video_clk_o  <= video_clk;
    video_rst_o  <= video_rst;
    
-
     process (video_clk_o)
         begin
         if rising_edge(video_clk_o) then
              div <= std_logic_vector(unsigned(div) + 1);
              ce_pix <= not (div(0) xor div(1) xor div(2));
              if dim_video = '1' then
-                rgb_out_o <= std_logic_vector(resize(unsigned(r) srl 1, 3)) & 
-                             std_logic_vector(resize(unsigned(g) srl 1, 3)) & 
-                             std_logic_vector(resize(unsigned(b) srl 1, 2));
+                rgb_out <=   std_logic_vector(resize(unsigned(main_video_red) srl 1, 3)) & 
+                             std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) & 
+                             std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
              else
-                rgb_out_o <= std_logic_vector(r) & std_logic_vector(g) & std_logic_vector(b);
+                rgb_out <= std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
              end if;      
-        end if; 
-        
-        HSync <= not hs;
-        VSync <= not vs;
-        HBlank <= hbl;
-        VBlank <= vbl;  
+        end if;        
     end process;
+    
+   -- @This here remains a rather complicated TODO. sy2002 and/or MJoergen will support
+   -- OLD COMMENT TAKEN FROM ANOTHER FILE, DOES NOT FULLY FIT HERE:
+   -- On video_ce_o and video_ce_ovl_o: You have an important @TODO when porting a core:
+   -- video_ce_o: You need to make sure that video_ce_o divides clk_main_i such that it transforms clk_main_i
+   --             into the pixelclock of the core (means: the core's native output resolution pre-scandoubler)
+   -- video_ce_ovl_o: Clock enable for the OSM overlay and for sampling the core's (retro) output in a way that
+   --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
+   --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
+   --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
+   -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
+   --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
+   main_video_ce_o         <= ce_pix;
+   main_video_ce_ovl_o     <= '1';
+   main_video_retro15kHz_o <= '0';
 
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -281,16 +269,16 @@ begin
 
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
-         video_ce_o           => main_video_ce_o,
-         video_ce_ovl_o       => main_video_ce_ovl_o,
-         video_retro15kHz_o   => main_video_retro15kHz_o,
-         video_red_o          => main_video_red_o,
-         video_green_o        => main_video_green_o,
-         video_blue_o         => main_video_blue_o,
-         video_vs_o           => main_video_vs_o,
-         video_hs_o           => main_video_hs_o,
-         video_hblank_o       => main_video_hblank_o,
-         video_vblank_o       => main_video_vblank_o,
+         video_ce_o           => open,
+         video_ce_ovl_o       => open,
+         video_retro15kHz_o   => open,
+         video_red_o          => main_video_red,
+         video_green_o        => main_video_green,
+         video_blue_o         => main_video_blue,
+         video_vs_o           => main_video_vs,
+         video_hs_o           => main_video_hs,
+         video_hblank_o       => main_video_hblank,
+         video_vblank_o       => main_video_vblank,
 
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_left_o,
@@ -321,37 +309,37 @@ begin
 
     -- screen rotate
 
-    i_screen_rotate : entity work.screen_rotate
-    port map (
+--    i_screen_rotate : entity work.screen_rotate
+--    port map (
   
-    --inputs
-    CLK_VIDEO  => video_clk_o,
-    CE_PIXEL   => main_video_ce_o,
-    VGA_R      => main_video_red_o,
-    VGA_G      => main_video_green_o,
-    VGA_B      => main_video_blue_o,
-    VGA_HS     => main_video_hs_o,
-    VGA_VS     => main_video_vs_o,
-    VGA_DE     => main_video_de_o,
-    rotate_ccw => rotate_ccw,
-    no_rotate  => no_rotate,
-    flip       => flip,
-    FB_VBL     => FB_VBL,
-    FB_LL      => FB_LL,
+--    --inputs
+--    CLK_VIDEO  => video_clk_o,
+--    CE_PIXEL   => main_video_ce_o,
+--    VGA_R      => main_video_red_o,
+--    VGA_G      => main_video_green_o,
+--    VGA_B      => main_video_blue_o,
+--    VGA_HS     => main_video_hs_o,
+--    VGA_VS     => main_video_vs_o,
+--    VGA_DE     => main_video_de_o,
+--    rotate_ccw => rotate_ccw,
+--    no_rotate  => no_rotate,
+--    flip       => flip,
+--    FB_VBL     => FB_VBL,
+--    FB_LL      => FB_LL,
     
-    DDRAM_BUSY => '0', -- set this to 0 for now
-    -- outputs
-    video_rotated => video_rotated,
-    FB_EN        => FB_EN,
+--    DDRAM_BUSY => '0', -- set this to 0 for now
+--    -- outputs
+--    video_rotated => video_rotated,
+--    FB_EN        => FB_EN,
     
-    FB_FORMAT    => FB_FORMAT,
-    FB_WIDTH     => FB_WIDTH,
-    FB_HEIGHT    => FB_HEIGHT,
-    FB_BASE      => FB_BASE,     
-    FB_STRIDE    => FB_STRIDE
+--    FB_FORMAT    => FB_FORMAT,
+--    FB_WIDTH     => FB_WIDTH,
+--    FB_HEIGHT    => FB_HEIGHT,
+--    FB_BASE      => FB_BASE,     
+--    FB_STRIDE    => FB_STRIDE
     
   
-  );
+--  );
   
     --arcade video
 
@@ -361,17 +349,16 @@ begin
             WIDTH => 288,   -- screen width in pixels ( ROT90 )
             DW    => 8,     -- each character is 8 pixels x 8 pixels
             GAMMA => 1
-        )
-        
+        )         
      port map (
-        clk_video_i         => video_clk,       -- video clock 48 MHz
+        clk_video_i         => video_clk,             -- video clock 48 MHz
         ce_pix              => ce_pix,
-        RGB_in              => rgb_out_o,
-        HBlank              => HBlank,
-        VBlank              => VBlank,
-        HSync               => HSync,
-        VSync               => VSync,
-        CLK_VIDEO_o         => video_clk,       -- video clock 48 Mhz
+        RGB_in              => rgb_out,
+        HBlank              => main_video_hblank,
+        VBlank              => main_video_vblank,
+        HSync               => not main_video_hs,
+        VSync               => not main_video_vs,
+        CLK_VIDEO_o         => open,                  -- @TODO: need to handle later
         CE_PIXEL            => main_video_ce_o,
         VGA_R               => main_video_red_o,
         VGA_G               => main_video_green_o,
@@ -379,7 +366,7 @@ begin
         VGA_HS              => main_video_hs_o,
         VGA_VS              => main_video_vs_o,
         VGA_DE              => main_video_de_o,
-        VGA_SL              => vga_sl_o,
+        VGA_SL              => open,                  -- @TODO: need to handle later
         fx                  => status(5 downto 3),
         forced_scandoubler  => forced_scandoubler,
         gamma_bus           => gamma_bus
@@ -436,17 +423,7 @@ begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
       qnice_dev_data_o     <= x"EEEE";
 
-      -- Demo core specific: Delete before starting to port your core
-      qnice_demo_vd_ce     <= '0';
-      qnice_demo_vd_we     <= '0';
-
       case qnice_dev_id_i is
-
-         -- Demo core specific stuff: delete before porting your own core
-         when C_DEV_DEMO_VD =>
-            qnice_demo_vd_ce     <= qnice_dev_ce_i;
-            qnice_demo_vd_we     <= qnice_dev_we_i;
-            qnice_dev_data_o     <= qnice_demo_vd_data_o;
 
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) or other devices here
          -- Device numbers need to be >= 0x0100
@@ -465,67 +442,5 @@ begin
    -- and make sure that the you configure the port that works with QNICE as a falling edge
    -- by setting G_FALLING_A or G_FALLING_B (depending on which port you use) to true.
 
-   ---------------------------------------------------------------------------------------
-   -- Virtual drive handler
-   --
-   -- Only added for demo-purposes at this place, so that we can demonstrate the
-   -- firmware's ability to browse files and folders. It is very likely, that the
-   -- virtual drive handler needs to be placed somewhere else, for example inside
-   -- main.vhd. We advise to delete this before starting to port a core and re-adding
-   -- it later (and at the right place), if and when needed.
-   ---------------------------------------------------------------------------------------
-
-   -- @TODO:
-   -- a) In case that this is handled in main.vhd, you need to add the appropriate ports to i_main
-   -- b) You might want to change the drive led's color (just like the C64 core does) as long as
-   --    the cache is dirty (i.e. as long as the write process is not finished, yet)  
-   main_drive_led_o     <= '0';
-   main_drive_led_col_o <= x"00FF00";
-
-   i_vdrives : entity work.vdrives
-      generic map (
-         VDNUM       => C_VDNUM
-      )
-      port map
-      (
-         clk_qnice_i       => qnice_clk_i,
-         clk_core_i        => main_clk,
-         reset_core_i      => main_reset_core_i,
-
-         -- Core clock domain
-         img_mounted_o     => open,
-         img_readonly_o    => open,
-         img_size_o        => open,
-         img_type_o        => open,
-         drive_mounted_o   => open,
-         
-         -- Cache output signals: The dirty flags can be used to enforce data consistency
-         -- (for example by ignoring/delaying a reset or delaying a drive unmount/mount, etc.)
-         -- The flushing flags can be used to signal the fact that the caches are currently
-         -- flushing to the user, for example using a special color/signal for example
-         -- at the drive led
-         cache_dirty_o     => open,
-         cache_flushing_o  => open,
-
-         -- QNICE clock domain
-         sd_lba_i          => (others => (others => '0')),
-         sd_blk_cnt_i      => (others => (others => '0')),
-         sd_rd_i           => (others => '0'),
-         sd_wr_i           => (others => '0'),
-         sd_ack_o          => open,
-
-         sd_buff_addr_o    => open,
-         sd_buff_dout_o    => open,
-         sd_buff_din_i     => (others => (others => '0')),
-         sd_buff_wr_o      => open,
-
-         -- QNICE interface (MMIO, 4k-segmented)
-         -- qnice_addr is 28-bit because we have a 16-bit window selector and a 4k window: 65536*4096 = 268.435.456 = 2^28
-         qnice_addr_i      => qnice_dev_addr_i,
-         qnice_data_i      => qnice_dev_data_i,
-         qnice_data_o      => qnice_demo_vd_data_o,
-         qnice_ce_i        => qnice_demo_vd_ce,
-         qnice_we_i        => qnice_demo_vd_we
-      );
 
 end architecture synthesis;

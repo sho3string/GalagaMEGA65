@@ -26,20 +26,14 @@ entity main is
       -- MiSTer core main clock speed:
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
       clk_main_speed_i        : in natural;
-      
-      main_clk_o              : out std_logic;        -- Galaga's 18 MHz main clock
-      main_rst_o              : out std_logic;        -- Galaga's reset, synchronized
-        
-      video_clk_o             : out std_logic;        -- video clock 48 MHz
-      video_rst_o             : out std_logic;        -- video reset, synchronized
-
+            
       -- Video output
       video_ce_o              : out std_logic;
       video_ce_ovl_o          : out std_logic;
       video_retro15kHz_o      : out std_logic;
-      video_red_o             : out std_logic_vector(7 downto 0);
-      video_green_o           : out std_logic_vector(7 downto 0);
-      video_blue_o            : out std_logic_vector(7 downto 0);
+      video_red_o             : out std_logic_vector(2 downto 0);
+      video_green_o           : out std_logic_vector(2 downto 0);
+      video_blue_o            : out std_logic_vector(1 downto 0);
       video_vs_o              : out std_logic;
       video_hs_o              : out std_logic;
       video_hblank_o          : out std_logic;
@@ -96,12 +90,6 @@ signal AUDIO_R           : std_logic_vector(15 downto 0) := AUDIO_L;
 signal AUDIO_S           : std_logic_vector(15 downto 0) := (others => '0');
 
 
--- horizontal blank, vertical blank, vertical sync & horizontal sync signals.
-signal hbl,vbl,vs,hs     : std_logic;
- -- red, green, blue
-signal r,g                : std_logic_vector(2 downto 0); -- 3 bits for red and green
-signal b                  : std_logic_vector(1 downto 0); -- 2 bits for blue
-
 -- dipswitches
 type dsw_type is array (0 to 3) of std_logic_vector(7 downto 0); -- each dipswitch is 8 bits wide.
 signal dsw : dsw_type;
@@ -148,23 +136,22 @@ begin
     i_galaga : entity work.galaga
     port map (
     
-    clock_18   => main_clk_o,
-    --reset      => reset,
-    reset      => main_rst_o,
+    clock_18   => clk_main_i,
+    reset      => reset_soft_i,
     
     dn_addr    => ioctl_addr(15 downto 0), -- MiSTer core had 16:0 ,is that a typo ?
     dn_data    => ioctl_dout,
     dn_wr      => ioctl_wr and rom_download,
     
-    video_r    => r,
-    video_g    => g,
-    video_b    => b,
+    video_r    => video_red_o,
+    video_g    => video_green_o,
+    video_b    => video_blue_o,
     
     --video_csync => open,
-    video_hs    => hs,
-    video_vs    => vs,
-    blank_h     => hbl,
-    blank_v     => vbl,
+    video_hs    => video_hs_o,
+    video_vs    => video_vs_o,
+    blank_h     => video_hblank_o,
+    blank_v     => video_vblank_o,
     
     audio       => audio,
     
