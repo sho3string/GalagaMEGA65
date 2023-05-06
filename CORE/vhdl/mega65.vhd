@@ -148,11 +148,11 @@ architecture synthesis of MEGA65_Core is
 -- Clocks and active high reset signals for each clock domain
 ---------------------------------------------------------------------------------------------
 
-signal main_clk               : std_logic;               -- Core main clock
-signal main_rst               : std_logic;
+signal main_clk            : std_logic;               -- Core main clock
+signal main_rst            : std_logic;
 
-signal video_clk              : std_logic;               
-signal video_rst              : std_logic;
+signal video_clk           : std_logic;               
+signal video_rst           : std_logic;
 
 ---------------------------------------------------------------------------------------------
 -- main_clk (MiSTer core's clock)
@@ -167,9 +167,9 @@ signal main_video_hs       : std_logic;
 signal main_video_hblank   : std_logic;
 signal main_video_vblank   : std_logic;
 
-signal status                    : signed(31 downto 0);
-signal forced_scandoubler        : std_logic;
-signal gamma_bus                 : std_logic_vector(21 downto 0);
+signal status              : signed(31 downto 0);
+signal forced_scandoubler  : std_logic;
+signal gamma_bus           : std_logic_vector(21 downto 0);
 
 signal direct_video      : std_logic;
 signal flip              : std_logic := '0';
@@ -193,10 +193,11 @@ constant C_MENU_IMPROVE_AUDIO : natural := 24;
 
 
 -- Galaga specific video processing
-signal rgb_out             : std_logic_vector(7 downto 0);
-signal ce_pix              : std_logic;
-signal div                 : std_logic_vector(2 downto 0);
-signal dim_video           : std_logic;
+signal HSync,VSync,HBlank,VBlank : std_logic;
+signal rgb_out                   : std_logic_vector(7 downto 0);
+signal ce_pix                    : std_logic;
+signal div                       : std_logic_vector(2 downto 0);
+signal dim_video                 : std_logic;
 
 begin
 
@@ -231,7 +232,13 @@ begin
                              std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
              else
                 rgb_out <= std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
-             end if;      
+             end if;    
+             
+             HSync <= not main_video_hs;
+             VSync <= not main_video_vs;
+             HBlank <= main_video_hblank;
+             VBlank <= main_video_vblank;  
+             
         end if;        
     end process;
     
@@ -254,7 +261,7 @@ begin
    ---------------------------------------------------------------------------------------------
 
    -- main.vhd contains the actual MiSTer core
-   i_main : entity work.main
+    i_main : entity work.main
       generic map (
          G_VDNUM              => C_VDNUM
       )
@@ -303,10 +310,11 @@ begin
          pot1_x_i             => main_pot1_x_i,
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
-         pot2_y_i             => main_pot2_y_i     
+         pot2_y_i             => main_pot2_y_i
+          
       ); -- i_main
 
-    -- screen rotate
+        -- screen rotate
 
 --    i_screen_rotate : entity work.screen_rotate
 --    port map (
@@ -339,7 +347,7 @@ begin
     
   
 --  );
-  
+
     --arcade video
 
     i_arcade_video : entity work.arcade_video
@@ -353,10 +361,10 @@ begin
         clk_video_i         => video_clk,             -- video clock 48 MHz
         ce_pix              => ce_pix,
         RGB_in              => rgb_out,
-        HBlank              => main_video_hblank,
-        VBlank              => main_video_vblank,
-        HSync               => not main_video_hs,
-        VSync               => not main_video_vs,
+        HBlank              => HBlank,
+        VBlank              => VBlank,
+        HSync               => HSync,
+        VSync               => VSync,
         CLK_VIDEO_o         => open,                  -- @TODO: need to handle later
         CE_PIXEL            => main_video_ce_o,
         VGA_R               => main_video_red_o,
