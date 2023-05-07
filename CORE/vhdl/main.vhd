@@ -98,7 +98,7 @@ signal ioctl_download : std_logic;
 signal ioctl_wr       : std_logic;
 signal ioctl_addr     : std_logic_vector(24 downto 0);
 signal ioctl_dout     : std_logic_vector(7 downto 0);
-signal ioctl_index  : std_logic_vector(7 downto 0);
+signal ioctl_index    : std_logic_vector(7 downto 0);
 
 signal rom_download : std_logic := ioctl_download and not std_logic(ioctl_index(0));
 
