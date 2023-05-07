@@ -225,7 +225,13 @@ begin
         begin
         if rising_edge(video_clk_o) then
              div <= std_logic_vector(unsigned(div) + 1);
-             ce_pix <= not (div(0) xor div(1) xor div(2));
+             
+             if div="000" then
+                ce_pix <= '1';
+                else
+                ce_pix <= '0';
+             end if;
+
              if dim_video = '1' then
                 rgb_out <=   std_logic_vector(resize(unsigned(main_video_red) srl 1, 3)) & 
                              std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) & 
