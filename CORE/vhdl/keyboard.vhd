@@ -31,10 +31,8 @@ entity keyboard is
       -- Interface to the MEGA65 keyboard
       key_num_i            : in integer range 0 to 79;   -- cycles through all MEGA65 keys
       key_pressed_n_i      : in std_logic;               -- low active: debounced feedback: is kb_key_num_i pressed right now?
-               
-      -- @TODO: Create the kind of keyboard output that your core needs
-      -- "example_n_o" is a low active register and used by the demo core
-      example_n_o          : out std_logic_vector(79 downto 0)
+              
+      keyboard_n_o          : out std_logic_vector(79 downto 0)
    );
 end keyboard;
 
@@ -123,7 +121,7 @@ signal key_pressed_n : std_logic_vector(79 downto 0);
 
 begin
 
-   example_n_o <= key_pressed_n;
+   keyboard_n_o <= key_pressed_n;
    
    keyboard_state : process(clk_main_i)
    begin

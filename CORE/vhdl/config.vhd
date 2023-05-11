@@ -375,8 +375,8 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "HDMI Mode"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 50 Hz 16:9, selected by default
-                                             OPTM_G_HDMI,                              -- 720p 60 Hz 16:9
+                                             OPTM_G_HDMI,                              -- 720p 50 Hz 16:9, selected by default
+                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 60 Hz 16:9
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 4:3
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 5:4
                                              OPTM_G_LINE,                              -- Line

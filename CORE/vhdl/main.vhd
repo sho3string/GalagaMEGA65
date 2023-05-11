@@ -70,8 +70,7 @@ end entity main;
 
 architecture synthesis of main is
 
--- @TODO: Remove these demo core signals
-signal keyboard_n          : std_logic_vector(79 downto 0);
+signal keyboard_n        : std_logic_vector(79 downto 0);
 
 signal pause_cpu         : std_logic; -- to do later
 signal status            : signed(31 downto 0);
@@ -91,16 +90,13 @@ signal AUDIO_S           : std_logic_vector(15 downto 0) := (others => '0');
 
 
 -- dipswitches
-type dsw_type is array (0 to 3) of std_logic_vector(7 downto 0); -- each dipswitch is 8 bits wide.
-signal dsw : dsw_type;
+--type dsw_type is array (0 to 3) of std_logic_vector(7 downto 0); -- each dipswitch is 8 bits wide.
+--signal dsw : dsw_type ; 
 
-signal ioctl_download : std_logic;
-signal ioctl_wr       : std_logic;
-signal ioctl_addr     : std_logic_vector(24 downto 0);
-signal ioctl_dout     : std_logic_vector(7 downto 0);
-signal ioctl_index    : std_logic_vector(7 downto 0);
-
-signal rom_download : std_logic := ioctl_download and not std_logic(ioctl_index(0));
+signal dsw_a : std_logic_vector(7 downto 0);
+signal dsw_b : std_logic_vector(7 downto 0);
+signal dsw_self_test : std_logic;
+signal dsw_service   : std_logic;
 
 -- inputs
 
@@ -109,9 +105,9 @@ signal rom_download : std_logic := ioctl_download and not std_logic(ioctl_index(
 -- b[0]: osd button
 
 signal buttons           : std_logic_vector(1 downto 0);
-signal reset             : std_logic  := reset_hard_i or reset_soft_i or status(0) or buttons(1) or rom_download;
-signal  joystick_0,joystick_1 : std_logic_vector(15 downto 0);
-signal  joy : std_logic_vector(15 downto 0) := joystick_0 or joystick_1;
+signal reset             : std_logic  := reset_hard_i or reset_soft_i;
+signal joystick_0,joystick_1 : std_logic_vector(15 downto 0);
+signal joy : std_logic_vector(15 downto 0) := joystick_0 or joystick_1;
 
 signal  m_up    : std_logic := joy(3);
 signal  m_down  : std_logic := joy(2);
@@ -130,14 +126,24 @@ signal hs_data_in : std_logic_vector(7 downto 0);
 signal hs_data_out : std_logic_vector(7 downto 0);
 signal hs_write_enable : std_logic;
 
+constant m65_5             : integer := 16; --insert coin 1
+constant m65_6             : integer := 19; --insert coin 2
+constant m65_1             : integer := 56; --Player 1 Start
+constant m65_2             : integer := 59; --Player 2 Start
 
 begin
+    
+    -- need to connect DIPs to menu items but for now we will set them all to OFF position
+    dsw_a <= (others => '0');
+    dsw_b <= (others => '0');
+    dsw_self_test <= '0';
+    dsw_service   <= '0';
 
     i_galaga : entity work.galaga
     port map (
     
     clock_18   => clk_main_i,
-    reset      => reset_soft_i,
+    reset      => reset,
     
     video_r    => video_red_o,
     video_g    => video_green_o,
@@ -151,24 +157,24 @@ begin
     
     audio       => audio,
     
-    self_test  => dsw(2)(0),
-    service    => dsw(2)(1),
-    coin1      => m_coin1,
-    coin2      => m_coin2,
-    start1     => m_start1,
-    start2     => m_start2,
-    up1        => m_up,
-    down1      => m_down,
-    left1      => m_left,
-    right1     => m_right,
-    fire1      => m_fire,
-    up2        => m_up,
-    down2      => m_down,
-    left2      => m_left,
-    right2     => m_right,
-    fire2      => m_fire,
-    dip_switch_a    => not dsw(0),
-    dip_switch_b    => not dsw(1),
+    self_test  => dsw_self_test,
+    service    => dsw_service,
+    coin1      => keyboard_n(m65_5),
+    coin2      => keyboard_n(m65_6),
+    start1     => keyboard_n(m65_1),
+    start2     => keyboard_n(m65_2),
+    up1        => not joy_1_up_n_i,
+    down1      => not joy_1_down_n_i,
+    left1      => not joy_1_left_n_i,
+    right1     => not joy_1_right_n_i,
+    fire1      => not joy_1_fire_n_i,
+    up2        => not joy_2_up_n_i,
+    down2      => not joy_2_down_n_i,
+    left2      => not joy_2_left_n_i,
+    right2     => not joy_2_right_n_i,
+    fire2      => not joy_2_fire_n_i,
+    dip_switch_a    => not dsw_a,
+    dip_switch_b    => not dsw_b,
     h_offset   => status(27 downto 24),
     v_offset   => status(31 downto 28),
     pause      => pause_cpu,
@@ -197,12 +203,7 @@ begin
          key_num_i            => kb_key_num_i,
          key_pressed_n_i      => kb_key_pressed_n_i,
 
-         -- @TODO: Create the kind of keyboard output that your core needs
-         -- "example_n_o" is a low active register and used by the demo core:
-         --    bit 0: Space
-         --    bit 1: Return
-         --    bit 2: Run/Stop
-         example_n_o          => keyboard_n
+         keyboard_n_o          => keyboard_n
       ); -- i_keyboard
 
 end architecture synthesis;
