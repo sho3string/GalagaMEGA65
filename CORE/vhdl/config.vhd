@@ -76,25 +76,20 @@ type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 
 constant SCR_WELCOME : string :=
 
-   "Name of the Demo Core Version 1.0\n" &
-   "MiSTer port done by Demo Author in 2022\n\n" &
+   "Galaga\n" &
+   "------\n" &
+   "\n" &
+   "MiSTer port done by Muse in 2023\n\n" &
 
    -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving these lines in
    "Powered by MiSTer2MEGA65 Version [WIP],\n" &
-   "done by sy2002 and MJoergen in 2022\n" &
-
-   "\n\nEdit config.vhd to modify welcome screen.\n\n" &
-   "You can for example show the keyboard map.\n" &
-   "Look at this example for the Demo core:\n\n\n" &
-
-   "    Key                Demo core\n" & 
-   "    " & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_10 & CHR_LINE_1 & CHR_LINE_1 & "\n" &
-   "    Left Cursor        Paddle left\n" &
-   "    Right Cursor       Paddle right\n" &
-   "    Space              Start game\n" &
-   "    Help               Options menu\n\n\n" &
-
-   "\n\n    Press Space to continue.\n\n\n";
+   "Done by sy2002 and MJoergen in 2022\n" &
+   "\n\n"                                    &
+   "Credits  : Press '5' or '6'\n"           & 
+   "Start    : Press '1' or '2' for player(s)\n" &
+   "Pause    : Press 'P'\n"              &
+   "Controls : Joy 1 or a,d, up_arrow\n" &
+   "\n\n    Press Space to continue.\n\n\n"; 
    
 constant HELP_1 : string :=
 
@@ -210,7 +205,7 @@ constant RESET_COUNTER     : natural := 100;
 constant OPTM_PAUSE        : boolean := false;
 
 -- show the welcome screen in general
-constant WELCOME_ACTIVE    : boolean := false;
+constant WELCOME_ACTIVE    : boolean := true;
 
 -- shall the welcome screen also be shown after the core is reset?
 -- (only relevant if WELCOME_ACTIVE is true)
@@ -308,7 +303,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";       -- the internal write c
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 27;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 31;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -319,8 +314,7 @@ constant OPTM_DX           : natural := 23;
 constant OPTM_DY           : natural := OPTM_SIZE;
                                              
 constant OPTM_ITEMS        : string :=
-
-   " Demo Headline A\n"     &
+   " Galaga\n"              &
    "\n"                     & 
    " Item A.1\n"            &
    " Item A.2\n"            &
@@ -333,6 +327,10 @@ constant OPTM_ITEMS        : string :=
    " 720p 60 Hz 16:9\n"     &
    " 576p 50 Hz 4:3\n"      &
    " 576p 50 Hz 5:4\n"      &
+   "\n"                     &
+   " Digital Video Output\n"&
+   "\n"                     &
+   " Rotate Screen 90    \n"&
    "\n"                     &
    " Drives\n"              &
    "\n"                     &
@@ -361,6 +359,7 @@ constant OPTM_G_Drive_Z    : integer := 5;
 constant OPTM_G_CRT        : integer := 6;
 constant OPTM_G_Zoom       : integer := 7;
 constant OPTM_G_Audio      : integer := 8;
+constant OPTM_G_ROT90      : integer := 9;
 
 -- define your menu groups: which menu items are belonging together to form a group?
 -- where are separator lines? which items should be selected by default?
@@ -379,6 +378,10 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 60 Hz 16:9
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 4:3
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 5:4
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_TEXT,                              -- Digital Video Output
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_ROT90 + OPTM_G_SINGLESEL + OPTM_G_STDSEL,          -- Rotate 90°
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT,                              -- Headline "Drives"
                                              OPTM_G_LINE,                              -- Line

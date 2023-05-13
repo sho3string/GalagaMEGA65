@@ -89,7 +89,7 @@ port (
    main_video_hblank_o     : out std_logic;
    main_video_vblank_o     : out std_logic;
    main_video_de_o         : out std_logic;
-   
+  
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
    main_audio_right_o      : out signed(15 downto 0);
@@ -175,7 +175,7 @@ signal direct_video      : std_logic;
 signal flip              : std_logic := '0';
 signal video_rotated     : std_logic;
 signal flip_screen       : std_logic := status(8);
-signal no_rotate         : std_logic := status(2) OR direct_video;
+signal no_rotate         : std_logic; -- := status(2) OR direct_video;
 signal rotate_ccw        : std_logic := flip_screen;
 
 ---------------------------------------------------------------------------------------------
@@ -187,9 +187,10 @@ constant C_MENU_HDMI_16_9_50  : natural := 9;
 constant C_MENU_HDMI_16_9_60  : natural := 10;
 constant C_MENU_HDMI_4_3_50   : natural := 11;
 constant C_MENU_HDMI_5_4_50   : natural := 12;
-constant C_MENU_CRT_EMULATION : natural := 22;
-constant C_MENU_HDMI_ZOOM     : natural := 23;
-constant C_MENU_IMPROVE_AUDIO : natural := 24;
+constant C_MENU_ROT90         : natural := 16;
+constant C_MENU_CRT_EMULATION : natural := 26;
+constant C_MENU_HDMI_ZOOM     : natural := 27;
+constant C_MENU_IMPROVE_AUDIO : natural := 28;
 
 
 -- Galaga specific video processing
@@ -223,6 +224,7 @@ begin
    
    main_video_hblank_o <= HBlank;
    main_video_vblank_o <= VBlank;
+  
    
     process (video_clk_o)
         begin
@@ -240,9 +242,9 @@ begin
                              std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) & 
                              std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
              else
-                rgb_out <= std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
+                rgb_out <=   std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
              end if;    
-             
+            
              HSync <= not main_video_hs;
              VSync <= not main_video_vs;
              HBlank <= main_video_hblank;
@@ -294,7 +296,7 @@ begin
          video_hs_o           => main_video_hs,
          video_hblank_o       => main_video_hblank,
          video_vblank_o       => main_video_vblank,
-
+         
          -- Audio output (PCM format, signed values)
          audio_left_o         => main_audio_left_o,
          audio_right_o        => main_audio_right_o,
@@ -323,39 +325,37 @@ begin
           
       ); -- i_main
 
-        -- screen rotate
+    -- screen rotate
 
---    i_screen_rotate : entity work.screen_rotate
---    port map (
+    i_screen_rotate : entity work.screen_rotate
+    port map (
   
---    --inputs
---    CLK_VIDEO  => video_clk_o,
---    CE_PIXEL   => main_video_ce_o,
---    VGA_R      => main_video_red_o,
---    VGA_G      => main_video_green_o,
---    VGA_B      => main_video_blue_o,
---    VGA_HS     => main_video_hs_o,
---    VGA_VS     => main_video_vs_o,
---    VGA_DE     => main_video_de_o,
---    rotate_ccw => rotate_ccw,
---    no_rotate  => no_rotate,
---    flip       => flip,
---    FB_VBL     => FB_VBL,
---    FB_LL      => FB_LL,
+    --inputs
+    CLK_VIDEO  => video_clk,
+    CE_PIXEL   => main_video_ce_o,
+    VGA_R      => main_video_red_o,
+    VGA_G      => main_video_green_o,
+    VGA_B      => main_video_blue_o,
+    VGA_HS     => main_video_hs_o,
+    VGA_VS     => main_video_vs_o,
+    VGA_DE     => main_video_de_o,
+    rotate_ccw => rotate_ccw,
+    no_rotate  => no_rotate,
+    flip       => flip,
+    FB_VBL     => '0',
+    FB_LL      => '0',
+    DDRAM_BUSY => '0', -- set this to 0 for now
+    -- outputs
+    video_rotated => video_rotated
+    --FB_EN        => FB_EN,
     
---    DDRAM_BUSY => '0', -- set this to 0 for now
---    -- outputs
---    video_rotated => video_rotated,
---    FB_EN        => FB_EN,
-    
---    FB_FORMAT    => FB_FORMAT,
---    FB_WIDTH     => FB_WIDTH,
---    FB_HEIGHT    => FB_HEIGHT,
---    FB_BASE      => FB_BASE,     
---    FB_STRIDE    => FB_STRIDE
-    
-  
---  );
+    --FB_FORMAT    => FB_FORMAT,
+    --FB_WIDTH     => FB_WIDTH,
+    --FB_HEIGHT    => FB_HEIGHT,
+    --FB_BASE      => FB_BASE,     
+    --FB_STRIDE    => FB_STRIDE
+   
+  );
 
     --arcade video
 
@@ -374,7 +374,7 @@ begin
         VBlank              => VBlank,
         HSync               => HSync,
         VSync               => VSync,
-        CLK_VIDEO_o         => open,                  -- @TODO: need to handle later
+        CLK_VIDEO_o         => video_clk_o,            
         CE_PIXEL            => main_video_ce_o,
         VGA_R               => main_video_red_o,
         VGA_G               => main_video_green_o,
