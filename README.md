@@ -43,7 +43,7 @@ How to install the Galaga core on your MEGA65
 
 2. **Download the Python script**: Download the provided Python script that
    prepares the ROMs such that the Galaga core is able to use it from
-   [Link](https://raw.githubusercontent.com/sho3string/GalagaMEGA65/master/galaga_rom_installer.py).
+   [Link](https://github.com/sho3string/GalagaMEGA65/blob/master/galaga_rom_installer.py).
 
 3. **Run the Python script**: Execute the Python script to create a folder
    with the ROMs. 
