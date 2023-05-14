@@ -43,6 +43,29 @@
 START_FIRMWARE  RBRA    START_SHELL, 1
 
 ; ----------------------------------------------------------------------------
+; Core specific callback functions: Submenus
+; ----------------------------------------------------------------------------
+
+; SUBMENU_SUMMARY callback function:
+;
+; Called when displaying the main menu for every %s that is found in the
+; "headline" / starting point of any submenu in config.vhd: You are able to
+; change the standard semantics when it comes to summarizing the status of the
+; very submenu that is meant by the "headline" / starting point.
+;
+; Input:
+;   R8: pointer to the string that includes the "%s"
+;   R9: pointer to the menu item within the M2M$CFG_OPTM_GROUPS structure
+;  R10: end-of-menu-marker: if R9 == R10: we reached end of the menu structure
+; Output:
+;   R8: 0, if no custom SUBMENU_SUMMARY, else:
+;       string pointer to completely new headline (do not modify/re-use R8)
+;   R9, R10: unchanged
+
+SUBMENU_SUMMARY XOR     R8, R8                  ; R8 = 0 = no custom string
+                RET
+
+; ----------------------------------------------------------------------------
 ; Core specific callback functions: File browsing and disk image mounting
 ; ----------------------------------------------------------------------------
 
@@ -77,6 +100,54 @@ FILTER_FILES    XOR     R8, R8                  ; R8 = 0 = do not filter file
 ;   R9: image type if R8=0, otherwise 0 or optional ptr to  error msg string
 PREP_LOAD_IMAGE XOR     R8, R8                  ; no errors
                 XOR     R9, R9                  ; image type hardcoded to 0
+                RET
+
+; ----------------------------------------------------------------------------
+; Core specific callback functions: Custom tasks
+; ----------------------------------------------------------------------------
+
+; PREP_START callback function:
+;
+; Called right before the core is being started. At this point, the core
+; is ready to run, settings are loaded (if the core uses settings) and the
+; core is still held in reset (if RESET_KEEP is on). So at this point in time,
+; you can execute tasks that change the run-state of the core.
+;
+; Input: None
+; Output:
+;   R8: 0=OK, else pointer to string with error message
+;   R9: 0=OK, else error code
+PREP_START      INCRB
+                XOR     R8, R8
+                XOR     R9, R9
+                DECRB
+                RET
+
+; OSM_SELECTED callback function:
+;
+; Called each time the user selects something in the on-screen-menu (OSM),
+; and while the OSM is still visible. This means, that this callback function
+; is called on each press of one of the valid selection keys with the
+; exception that pressing a selection key while hovering over a submenu entry
+; or exit point does not call this function. All the functionality and
+; semantics associated with a certain menu item is already handled by the
+; framework when OSM_SELECTED is called, so you are not able to change the
+; basic semantics but you are able to add core specific additional
+; "intelligent" semantics and behaviors.
+;
+; Input:
+;   R8: selected menu group (as defined in config.vhd)
+;   R9: selected item within menu group
+;       in case of single selected items: 0=not selected, 1=selected
+;   R10: OPTM_KEY_SELECT (by default means "Return") or
+;        OPTM_KEY_SELALT (by default means "Space")
+; Output:
+;   R8: 0=OK, else pointer to string with error message
+;   R9: 0=OK, else error code
+OSM_SELECTED    INCRB
+                XOR     R8, R8
+                XOR     R9, R9
+                DECRB
                 RET
 
 ; ----------------------------------------------------------------------------

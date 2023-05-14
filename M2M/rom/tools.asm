@@ -3,7 +3,7 @@
 ;
 ; Miscellaneous tools and helper functions
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -50,6 +50,208 @@ _M2M$CHK_EX_RET MOVE    R0, R8                  ; restore R8..R10
                 RET
 
 ; ----------------------------------------------------------------------------
+; M2M$RPL_S
+; 
+; Replaces the first instance of %s in a string by another string. There needs
+; to be at least one occurance of %s in the string otherwise fatal. If the
+; resulting string (Target string including %s) is longer than R11 then the
+; resulting string is shortened using FN_ELLIPSIS. The memory region specified
+; by the target string needs to be large enough to actually hold it.
+;
+; Input:  R8: Source string
+;         R9: Target string
+;        R10: Replacement string for %s
+;        R11: Maximum amount of characters for target string
+; Output: None. No registers are changed
+; ----------------------------------------------------------------------------
+
+M2M$RPL_S       SYSCALL(enter, 1)
+
+                MOVE    R9, R0                  ; R0: target string
+                MOVE    R8, R7                  ; R7: input string
+                MOVE    R10, R8                 ; R8: replacement string
+                MOVE    R11, R4                 ; R4: max width
+
+                MOVE    R8, R6                  ; remember R8
+                MOVE    R7, R8                  ; find "%s" in R7
+                MOVE    _M2M$RPL_S_S, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; R10: position of %s
+                RBRA    _M2M$RPL_S_1, !Z
+
+                ; if "%s" is not being found at this place, then something
+                ; went wrong terribly
+                MOVE    ERR_F_NO_S, R8
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+                ; copy the string from 0 to one before %s to the output buf.
+_M2M$RPL_S_1    MOVE    R10, R2                 ; R2: save %s pos, later use
+                SUB     R7, R10
+                MOVE    R7, R8
+                MOVE    R0, R9
+                SYSCALL(memcpy, 1)
+
+                ; overwrite the "%s" from the "%" on with new string, make
+                ; sure that we are not longer than the max width, which is
+                ; @SCR$OSM_O_DX
+                ; R10 contains the length of the string before the %s
+                MOVE    R6, R8                  ; replacement string
+                SYSCALL(strlen, 1)
+                ADD     R10, R9                 ; prefix string + repl. string
+
+                CMP     R9, R4                  ; is it larger than max width?
+                RBRA    _M2M$RPL_S_3, N         ; yes
+                MOVE    R0, R9                  ; R8 still points to repl. str
+                ADD     R10, R9                 ; ptr to "%"
+                SYSCALL(strcpy, 1)
+
+                ; if we land here, we successfully used "prefix" + "%s"; now
+                ; lets check, if we can add parts or everything of the
+                ; "suffix", i.e. the part after the "%s"
+                MOVE    R0, R8
+                SYSCALL(strlen, 1)
+                MOVE    R9, R3                  ; R3: size of concat string
+                CMP     R3, R4                  ; R3 < max width?
+                RBRA    _M2M$RPL_S_RET, Z       ; no (< means not Z)
+                RBRA    _M2M$RPL_S_RET, N       ; no (< means also not N)
+                
+                ADD     2, R2                   ; R2: first char behind "%s"
+                MOVE    R2, R8
+                SYSCALL(strlen, 1)
+                CMP     0, R9                   ; is there anything to add?
+                RBRA    _M2M$RPL_S_RET, Z       ; no
+
+                SUB     R3, R4                  ; R4 = max amt. chars to add
+
+                ; pick the minimum of (R4: max. amt. chars to add) and
+                ; (R9: size of "suffix") and copy the data into the buffer
+                CMP     R4, R9                  ; R4 > R9?
+                RBRA    _M2M$RPL_S_2, !N        ; no
+                MOVE    R9, R4                  ; yes: then use R9 instead
+_M2M$RPL_S_2    MOVE    R2, R8                  ; first char behind "%s"
+                MOVE    R0, R9
+                ADD     R3, R9                  ; last char of concat string
+                MOVE    R4, R10                 ; amount of chars to copy
+                SYSCALL(memcpy, 1)
+                ADD     R10, R9                 ; add zero terminator
+                MOVE    0, @R9
+                RBRA    _M2M$RPL_S_RET, 1
+
+                ; if we land here, the overall string consisting of the first
+                ; two parts ("prefix" + "%s") is too long, so we may only copy
+                ; the maximum amount and we need to add an
+                ; ellipsis (aka "...") at the end
+_M2M$RPL_S_3    MOVE    R0, R9
+                ADD     R10, R9
+                MOVE    R4, R5
+                SUB     R10, R5                 ; max amount we can copy
+                MOVE    R5, R10         
+                SYSCALL(memcpy, 1)
+                ADD     R10, R9                 ; add zero terminator
+                MOVE    0, @R9
+                SUB     3, R9                   ; add ellipsis
+                MOVE    FN_ELLIPSIS, R8
+                SYSCALL(strcpy, 1)
+
+_M2M$RPL_S_RET  SYSCALL(leave, 1)
+                RET
+
+_M2M$RPL_S_S    .ASCII_W "%s"
+
+; ----------------------------------------------------------------------------
+; M2M$GET_SETTING
+; 
+; Returns the value of a setting. The setting index is the index into the
+; array "OPTM_GROUPS" in config.vhd counting from zero.
+;
+; Input:  R8: OPTM_GROUPS index
+; Output: R8: unchanged
+;         R9: value of the setting
+; ----------------------------------------------------------------------------
+
+M2M$GET_SETTING INCRB
+
+                MOVE    R10, R0
+                XOR     R10, R10                ; R10=0: get
+                RSUB    _M2M$GOSSTTNG, 1
+                MOVE    R0, R10
+
+                DECRB
+                RET
+
+; Helper function used by M2M$GET_SETTING and by M2M$SET_SETTING
+; R10=0: Get, otherwise set
+_M2M$GOSSTTNG   INCRB
+
+                MOVE    OPTM_ICOUNT, R0         ; R0: size of menu structure
+                MOVE    @R0, R0
+                CMP     R0, R8                  ; legal index?
+                RBRA    _M2M$GOSSTTNG_1, N      ; yes: proceed
+                MOVE    R8, R9                  ; no: fatal
+                CMP     0, R10                  ; get?
+                RBRA    _M2M$GOSSTTNG_0, Z      ; yes: output error fot get
+                MOVE    ERR_FATAL_TS, R8        ; no: output error for set
+                RBRA    FATAL, 1
+_M2M$GOSSTTNG_0 MOVE    ERR_FATAL_TG, R8
+                RBRA    FATAL, 1
+
+_M2M$GOSSTTNG_1 MOVE    R8, R1                  ; R1: M2M$CFM_ADDR
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     4, R1
+                MOVE    R8, R2                  ; R2: bit within M2M$CFM_DATA
+                AND     0x000F, R2
+
+                MOVE    M2M$CFM_ADDR, R3        ; set bank
+                MOVE    R1, @R3
+                MOVE    M2M$CFM_DATA, R4
+
+                CMP     0, R10                  ; get setting?
+                RBRA    _M2M$GOSSTTNG_S, !Z     ; no
+
+                ; Get setting
+                MOVE    @R4, R4                 ; yes: R4: contains the bit
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     R2, R4                  ; extract the bit
+                AND     0x0001, R4              ; only this bit is relevant
+                MOVE    R4, R9
+                RBRA    _M2M$GOSSTTNG_R, 1
+
+                ; Set setting
+_M2M$GOSSTTNG_S MOVE    1, R5                   ; R5: bit mask to set bit
+                AND     0xFFFD, SR              ; clear X
+                SHL     R2, R5
+                CMP     1, R9                   ; set or clear bit?
+                RBRA    _M2M$GOSSTTNG_C, !Z     ; clear!
+                OR      R5, @R4                 ; set bit
+                RBRA    _M2M$GOSSTTNG_R, 1
+_M2M$GOSSTTNG_C NOT     R5, R5                  ; invert bitmask and..
+                AND     R5, @R4                 ; ..clear bit
+
+_M2M$GOSSTTNG_R DECRB
+                RET
+
+; ----------------------------------------------------------------------------
+; M2M$SET_SETTING
+; 
+; Returns the value of a setting. The setting index is the index into the
+; array "OPTM_GROUPS" in config.vhd counting from zero.
+;
+; Input:  R8: OPTM_GROUPS index
+;         R9: value
+; Output: R8/R9: unchanged
+; ----------------------------------------------------------------------------
+
+M2M$SET_SETTING INCRB
+
+                MOVE    R10, R0
+                MOVE    1, R10                  ; R10=1: set
+                RSUB    _M2M$GOSSTTNG, 1
+                MOVE    R0, R10
+
+                DECRB
+                RET
+; ----------------------------------------------------------------------------
 ; WAIT1SEC
 ;   Waits about 1 second
 ; WAIT333MS
@@ -74,6 +276,40 @@ _W333MS_L2      SUB     1, R1
                 SUB     1, R0
                 RBRA    _W333MS_L1, !Z
                 DECRB
+                RET
+
+; ----------------------------------------------------------------------------
+; WAIT_FOR_SD
+;   Waits SD_WAIT cycles relative to the start of the Shell. This is used
+;   as a workaround to increase the SD card reading stability after power-on.
+;   The function waits only after power-on and hard resets, i.e. it respects
+;   the SD_WAIT_DONE variable.
+; ----------------------------------------------------------------------------
+
+WAIT_FOR_SD     SYSCALL(enter, 1)
+
+                MOVE    SD_WAIT_DONE, R8        ; successfully waited before?
+                CMP     0, @R8
+                RBRA    _WAITFSD_RET, !Z        ; yes
+
+                MOVE    SD_CYC_MID, R8          ; 32-bit addition to calculate
+                MOVE    @R8, R8                 ; ..the target cycles
+                MOVE    SD_CYC_HI, R9
+                MOVE    @R9, R9
+                ADD     SD_WAIT, R8
+                ADDC    0, R9
+                MOVE    IO$CYC_MID, R10
+                MOVE    IO$CYC_HI, R11
+_WAITFSD_1      CMP     @R11, R9
+                RBRA    _WAITFSD_2, N           ; wait until @R11 >= R9
+                RBRA    _WAITFSD_1, !Z
+_WAITFSD_2      CMP     @R10, R8
+                RBRA    _WAITFSD_2, !N          ; wait while @R10 <= R8
+
+                MOVE    SD_WAIT_DONE, R8        ; remember that we waited
+                MOVE    1, @R8
+
+_WAITFSD_RET    SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -136,5 +372,37 @@ RESTORE_DEVSEL  INCRB
                 MOVE    @R1++, @R0
                 MOVE    M2M$RAMROM_4KWIN, R0
                 MOVE    @R1, @R0
+                DECRB
+                RET
+
+; ----------------------------------------------------------------------------
+; Print to serial terminal while processing "\n" sequences
+;
+; Input:  R8: Pointer to a string
+; Output: R8 is unchanged
+; ----------------------------------------------------------------------------
+
+LOG_STR         INCRB
+                MOVE    R8, R0
+                MOVE    R8, R7
+
+_PRINTSLF_1     CMP     0, @R0
+                RBRA    _PRINTSLF_RET, Z
+                XOR     R1, R1                  ; R1: char progression counter
+                CMP     0x005C, @R0             ; backslash?
+                RBRA    _PRINTSLF_2, !Z         ; no
+                CMP     'n', @R0                ; "\n" sequence?
+                RBRA    _PRINTSLF_2, Z          ; no
+                ADD     1, R1
+                SYSCALL(crlf, 1)
+                RBRA    _PRINTSLF_3, 1
+
+_PRINTSLF_2     MOVE    @R0, R8                 ; log char
+                SYSCALL(putc, 1)
+_PRINTSLF_3     ADD     1, R1
+                ADD     R1, R0
+                RBRA    _PRINTSLF_1, 1
+
+_PRINTSLF_RET   MOVE    R7, R8
                 DECRB
                 RET
