@@ -1,83 +1,60 @@
-MiSTer2MEGA65
-=============
+Galaga for MEGA65
+=================
 
-MiSTer2MEGA65 is a framework to simplify porting MiSTer cores to the MEGA65.
+Galaga is an iconic arcade classic that has captivated generations of gamers
+with its fast-paced gameplay and vibrant graphics. Originally released in
+1981, this space-themed fixed shooter game has stood the test of time, as it
+continues to be loved and celebrated by both casual and avid gamers alike.
+The simple yet addictive nature of the game, where players control a spaceship
+to defend against swarms of alien invaders, has left an indelible mark on the
+history of video games.
 
-![Title Image](doc/wiki/assets/MiSTer2MEGA65-Title.png)
+Now, with the power of the MEGA65, you can experience Galaga in all its glory
+with sublime compatibility and accuracy. The MEGA65, a modern recreation of
+the legendary Commodore 65, offers a retro gaming experience like no other,
+bringing together the nostalgia of classic games with cutting-edge hardware.
+Relive the excitement of this cherished classic, as you dive into the world of
+Galaga on your MEGA65 and enjoy a gaming experience that's as close to the
+original as it gets.
 
-Learn more by
-[watching this YouTube video](https://youtu.be/9Ib7z64z9N4)
-and get started by reading the
-[MiSTer2MEGA65 Wiki](https://github.com/sy2002/MiSTer2MEGA65/wiki).
+Get ready to embark on an intergalactic adventure, and prepare to be
+transported back in time to the golden era of arcade gaming with
+Galaga on your MEGA65!
 
-TL;DR
------
+This core is based on the
+[MiSTer](https://github.com/MiSTer-devel/Arcade-Galaga_MiSTer)
+Galaga core which
+itself is based on the work of [many others](AUTHORS).
 
-1. Scroll up and press the "Use this template" button to start a new
-   MiSTer2MEGA65 project. Then fork the MiSTer core you want to port
-   and make it a Git submodule of your newly created project.
+[Muse aka sho3string](https://github.com/sho3string)
+ported the core to the MEGA65 in 2023.
 
-2. Wrap the MiSTer core inside `CORE/vhdl/main.vhd` while
-   adjusting the clocks in `CORE/vhdl/clk.vhd`. Provide RAMs, ROMs and other
-   devices in `CORE/vhdl/mega65.vhd` and wire everything correctly.
+The core uses the [MiSTer2MEGA65](https://github.com/sy2002/MiSTer2MEGA65)
+framework and [QNICE-FPGA](https://github.com/sy2002/QNICE-FPGA) for
+FAT32 support (loading ROMs, mounting disks) and for the
+on-screen-menu.
 
-3. Configure your core's behavior, including how the start screen looks like,
-   what ROMs should be loaded (and where to), the abilities of the
-   <kbd>Help</kbd> menu and more in `CORE/vhdl/config.vhd` and in
-   `CORE/vhdl/globals.vhd`.
+How to install the Galaga core on your MEGA65
+---------------------------------------------
 
-**DONE** your core is ported to MEGA65! :-)
+1. **Download ROM**: Download the Galaga ROM ZIP file (do not unzip!) from
+  [this link](https://wowroms.com/en/roms/mame-0.139u1/galaga-midway-set-1/3707.html)
+  or search the web for "mame galaga midway set 1".
 
-*Obviously, this is a shameless exaggeration of how easy it is to work with
-MiSTer2MEGA65, but you get the gist of it.*
+2. **Download the Python script**: Download the provided Python script that
+   prepares the ROMs such that the Galaga core is able to use it from
+   [Link](https://raw.githubusercontent.com/sho3string/GalagaMEGA65/master/galaga_rom_installer.py).
 
-Getting started, detailed documentation and support
----------------------------------------------------
+3. **Run the Python script**: Execute the Python script to create a folder
+   with the ROMs. 
+   Use the command `python script.py <path to the zip file> <output_folder>`.
 
-* Please visit our official
-  [MiSTer2MEGA65 Wiki](https://github.com/sy2002/MiSTer2MEGA65/wiki). It
-  contains everything you ever wanted to know about M2M, including a
-  "Getting Started" tutorial and a step-by-step guide to port a MiSTer core.
-  You might whant to start your journey
-  [here](https://github.com/sy2002/MiSTer2MEGA65/wiki/1.-What-is-MiSTer2MEGA65)
-  and then follow the reading track that is pointed out in the
-  respective chapters.
+4. **Copy the ROMs to your MEGA65 SD card**: Copy the generated folder with
+   the ROMs to your MEGA65 SD card. You can use either the bottom SD card tray
+   of the MEGA65 or the tray at the backside of the computer (the latter has
+   precedence over the first).
+   The ROMs need to be in the folder `arcade/galaga`.
 
-* Post a question in our
-  [Discussion Forum](https://github.com/sy2002/MiSTer2MEGA65/discussions).
-
-Status of the framework
------------------------
-
-**The MiSTer2MEGA (M2M) framework is stable and ready for being used.**
-The first production quality core that is based on M2M is the
-[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9).
-Additionally there is a work-in-progress
-[Apple II core](https://github.com/lydon42/Apple-II_MEGA65/tree/progress)
-based on M2M. The main reason why we are currently using "Version 0.9"
-(0.9.x) for the M2M framework instead of "Version 1.0" is that there is not
-enough documentation available, yet. If you have a look at the
-[MiSTer2MEGA65 Wiki](https://github.com/sy2002/MiSTer2MEGA65/wiki)
-then you will notice, that there are many gaps in the documentation.
-
-This should not discourage you from using the MiSTer2MEGA65 framework right
-now to port MiSTer cores and other cores to the MEGA65. You can use the
-source code of the
-[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9)
-as your "user's manual" and "reference handbook" for the M2M framework;
-additionally to the existing
-[Wiki pages](https://github.com/sy2002/MiSTer2MEGA65/wiki).
-For being able to actually use the C64 core's source code as your
-documentation of how to use the M2M framework, we added a tag called
-`M2M-V0.9` to the GitHub repository of the
-[Commodore 64 for MEGA65](https://github.com/MJoergen/C64MEGA65/tree/M2M-V0.9).
-The tag is necessary, because Version 4 of the C64 core was based on an
-earlier version of the M2M framwork and only from the tag `M2M-V0.9` on the
-C64 core is aligned with Version 0.9 of M2M.
-
-Additionally to helping yourself with the Wiki (and the turorials there) and
-the C64 source code as your "user's manual" and "reference handbook": Post
-your question in the
-[Discussion Forum](https://github.com/sy2002/MiSTer2MEGA65/discussions)
-and join the
-[friendly MEGA65 community on Discord](https://discord.gg/PMBxcDvbX8).
+5. **Download and run the Galaga core**: Follow the instructions on
+  [this site](https://sy2002.github.io/m65cores/) to download and run the
+  Galaga core on your MEGA65.
