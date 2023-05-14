@@ -47,7 +47,7 @@ How to install the Galaga core on your MEGA65
 
 3. **Run the Python script**: Execute the Python script to create a folder
    with the ROMs. 
-   Use the command `python script.py <path to the zip file> <output_folder>`.
+   Use the command `python galaga_rom_installer.py <path to the zip file> <output_folder>`.
 
 4. **Copy the ROMs to your MEGA65 SD card**: Copy the generated folder with
    the ROMs to your MEGA65 SD card. You can use either the bottom SD card tray
