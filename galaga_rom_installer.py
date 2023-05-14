@@ -31,14 +31,6 @@ EXPECTED_CHECKSUMS = {
     "prom-5.5n": "5c2d0637794badb9a214324da3fd9ebbcd282a5c0f3a778fe6219fdba1c3b91a"
 }
 
-#!/usr/bin/env python3
-import os
-import sys
-import zipfile
-import tempfile
-import shutil
-import hashlib
-
 def calculate_sha256(file_path):
     sha256_hash = hashlib.sha256()
     with open(file_path, "rb") as f:
