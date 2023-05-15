@@ -6,7 +6,7 @@
 ; This On-Screen-Menu (OSM) offers various facilities that can be configured
 ; using config.vhd. The file options.asm needs the environment of shell.asm.
 ;
-; done by sy2002 in 2022 and licensed under GPL v3
+; done by sy2002 in 2023 and licensed under GPL v3
 ; ****************************************************************************
 
 ; ----------------------------------------------------------------------------
@@ -82,7 +82,7 @@ HELP_MENU       SYSCALL(enter, 1)
                 MOVE    HEAP, R8                ; store pointer to record
                 ADD     OPTM_IR_GROUPS, R8
                 MOVE    R9, @R8
-                MOVE    R9, R12                  ; R12: pointer to menu groups
+                MOVE    R9, R12                 ; R12: pointer to menu groups
 
                 ; Copy the standard selectors (which menu items are selected
                 ; by default) from the QNICE M2M$CFM_DATA register to the
@@ -155,25 +155,33 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
                 ; overwrite FP_HEAP: We will use OPTM_HEAP to store the
                 ; strings that will be displayed instead of the "%s" strings
                 ; from config.vhd. The maximum length per string (rounded up)
-                ; equals to @SCR$OSM_O_DX and the maximum amount of such kind
-                ; of "%s" strings equals to the actual amount of virtual
-                ; drives, i.e. VDRIVES_NUM
+                ; equals to @SCR$OSM_O_DX multiplied with the maximum amount
+                ; of such kind of "%s" strings, which equals to the actual
+                ; amount of virtual drives, i.e. VDRIVES_NUM plus the amount
+                ; of submenus plus the amount of manual CRT/ROM loading items
+                ; (i.e. CRTROM_MAN_NUM).
                 ;
-                ; But need one more than VDRIVES_NUM (i.e. VDRIVES_NUM + 1)
-                ; because we need a scratch buffer to remember the adjusted
-                ; filename during the period, where OPTM_S_SAVING from
-                ; config.vhd is being shown, i.e. while the save buffer
-                ; is dirty. We store the pointer to this in OPTM_HEAP_LAST.
+                ; But need one more than that (i.e. VDRIVES_NUM +
+                ; amount of submenus + CRTROM_MAN_NUM) because we need a
+                ; scratch buffer to remember the adjusted filename during the
+                ; period, where OPTM_S_SAVING from config.vhd is being shown,
+                ; i.e. while the save buffer is dirty. We store the pointer
+                ; to this in OPTM_HEAP_LAST.
+                MOVE    OPTM_SCOUNT, R11        ; R11: amount of submenus
+                MOVE    @R11, R11
                 MOVE    SCR$OSM_O_DX, R8
                 MOVE    @R8, R8
                 MOVE    VDRIVES_NUM, R9
-                MOVE    @R9, R9
+                MOVE    @R9, R9                 ; R9: amount of virtual drives
+                ADD     R11, R9                 ; add amount of submenus
+                MOVE    CRTROM_MAN_NUM, R11     ; add amount of CRT/ROM items
+                ADD     @R11, R9
                 SYSCALL(mulu, 1)                ; R10 = result lo word of mulu
                 MOVE    OPTM_HEAP_LAST, R8      ; clc. addr. of OPTM_HEAP_LAST
                 MOVE    R10, @R8
                 MOVE    OPTM_HEAP, R11
                 ADD     @R11, @R8
-                MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + 1 
+                MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + amt submen + 1
                 ADD     @R8, R10 
                 MOVE    OPTM_HEAP_SIZE, R8
                 CMP     R10, @R8                ; demand > heap?
@@ -227,6 +235,14 @@ _HLP_RET_DIRECT SYSCALL(leave, 1)
 
 HELP_MENU_INIT  SYSCALL(enter, 1)
 
+                ; make sure OPTM_HEAP is initialized to zero, as it will be
+                ; calculated and activated inside HELP_MENU
+                MOVE    OPTM_HEAP, R8
+                MOVE    0, @R8
+                MOVE    OPTM_HEAP_SIZE, R8
+                MOVE    0, @R8
+
+                ; fill menu data structure (see menu.asm)
                 MOVE    HEAP, R8
                 MOVE    SCR$OSM_O_X, R9
                 MOVE    @R9, R9
@@ -330,24 +346,10 @@ _HLP_CA_1       MOVE    LOG_STR_CFG_ON, R8
                 ; RP_SYSTEM_START (gencfg.asm)
                 MOVE    M2M$CSR, R2
                 MOVE    M2M$CSR_RESET, @R2
-
-                ; wait SD_WAIT cycles
-                MOVE    SD_CYC_MID, R8          ; 32-bit addition to calculate
-                MOVE    @R8, R8                 ; ..the target cycles
-                MOVE    SD_CYC_HI, R9
-                MOVE    @R9, R9
-                ADD     SD_WAIT, R8
-                ADDC    0, R9
-                MOVE    IO$CYC_MID, R10
-                MOVE    IO$CYC_HI, R11
-_HLP_CA_2A      CMP     @R11, R9
-                RBRA    _HLP_CA_2B, N           ; wait until @R11 >= R9
-                RBRA    _HLP_CA_2A, !Z
-_HLP_CA_2B      CMP     @R10, R8
-                RBRA    _HLP_CA_2B, !N          ; wait while @R10 <= R8
+                RSUB    WAIT_FOR_SD, 1
 
                 ; Mount SD card
-_HLP_CA_3       MOVE    CONFIG_DEVH, R8         ; device handle
+                MOVE    CONFIG_DEVH, R8         ; device handle
                 MOVE    1, R9                   ; partition #1 hardcoded
                 SYSCALL(f32_mnt_sd, 1)
                 CMP     0, R9                   ; R9=error code; 0=OK
@@ -510,7 +512,38 @@ _HLP_S2         SUB     1, R3                   ; one less menu item to go
                 RBRA    _HLP_S3, Z              ; no: do not destroy @R1
                 MOVE    R5, @R1                 ; yes: update @R1
 
-_HLP_S3         SYSCALL(leave, 1)
+                ; determine the amount of submenus (if any)
+                ; fatal if the amount is an odd number, because this indicates
+                ; that at least one "opened" OPTM_G_SUBMENU in config.vhd is
+                ; not "closed" by another instance of OPTM_G_SUBMENU
+_HLP_S3         MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0
+                MOVE    M2M$CFG_OPTM_GROUPS, @R0
+                MOVE    M2M$RAMROM_DATA, R0     ; R0: ptr cur men itm grp id
+
+                MOVE    OPTM_ICOUNT, R1
+                MOVE    @R1, R1                 ; R1: amount of menu items
+                XOR     R8, R8                  ; R8: amount of submenus
+
+_HLP_S4         MOVE    @R0++, R2
+                AND     OPTM_SUBMENU, R2        ; is a submenu?
+                RBRA    _HLP_S5, Z              ; no
+                ADD     1, R8                   ; yes
+_HLP_S5         SUB     1, R1                   ; one more item done
+                RBRA    _HLP_S4, !Z             ; iterate until done
+
+                AND     0xFFFB, SR              ; clear Carry
+                SHR     1, R8                   ; divide R8 by two
+                RBRA    _HLP_S_RET, !X          ; R8 was an even number..
+                MOVE    ERR_F_MENUSUB, R8       ; ..else fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1
+
+_HLP_S_RET      MOVE    OPTM_SCOUNT, R0         ; store in variable
+                MOVE    R8, @R0
+
+                SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -589,6 +622,8 @@ _ROSMC_LOOP     MOVE    R0, @R1                 ; new M2M$CFM_DATA "window"
 
 _ROSMC_NEXTBIT  MOVE    M2M$RAMROM_DEV, R6      ; do we need to ignore the..
                 MOVE    M2M$CONFIG, @R6         ; current bit?
+
+                ; exclude OPTM_G_MOUNT_DRV items
                 MOVE    M2M$RAMROM_4KWIN, R6
                 MOVE    M2M$CFG_OPTM_MOUNT, @R6 ; yes we need to ignore, if..
                 MOVE    M2M$RAMROM_DATA, R6     ; ..the menu item is about..
@@ -596,6 +631,15 @@ _ROSMC_NEXTBIT  MOVE    M2M$RAMROM_DEV, R6      ; do we need to ignore the..
                 CMP     1, @R6
                 RBRA    _ROSMC_INCBIT, Z        ; ignore
 
+                ; exclude OPTM_G_LOAD_ROM items
+                MOVE    M2M$RAMROM_4KWIN, R6
+                MOVE    M2M$CFG_OPTM_CRTROM, @R6
+                MOVE    M2M$RAMROM_DATA, R6
+                ADD     R4, R6
+                CMP     1, @R6
+                RBRA    _ROSMC_INCBIT, Z
+
+                ; do not exclude
                 MOVE    @R2, R8
                 AND     R7, R8
                 MOVE    @R3, R9
@@ -633,12 +677,35 @@ ROSM_SAVE       SYSCALL(enter, 1)
                 CMP     0, @R8
                 RBRA    _ROSMS_RET, Z
 
-                ; Iterate through the 16 windows of M2M$CFM_DATA to detect
+                ; If any write cache of any virtual drive is dirty then
+                ; we need to assume that the 512-byte hardware buffer is
+                ; currently in use by HANDLE_DEV. See also the comment about
+                ; us not following the QNICE best practice here and the
+                ; @TODO that we might want to refactor this in future.
+                RSUB    VD_ACTIVE, 1            ; any vdrives at all?
+                RBRA    _ROSMS_1, !C            ; no, so no danger of corruptn
+                MOVE    R8, R0                  ; R0: amount of vdrives
+                XOR     R8, R8                  ; vdrive id
+_ROSMS_0        MOVE    VD_CACHE_DIRTY, R9
+                RSUB    VD_DRV_READ, 1          ; get dirty flag for curr. drv
+                CMP     0, R8                   ; dirty?
+                RBRA    _ROSMS_NOWR, !Z         ; yes: do not save
+                ADD     1, R8                   ; no: check next vdrive
+                CMP     R0, R8                  ; done?
+                RBRA    _ROSMS_0, !Z            ; no: next iteration
+                RBRA    _ROSMS_1, 1             ; yes: detect changes & save
+
+_ROSMS_NOWR     MOVE    LOG_STR_CFG_NO, R8
+                SYSCALL(puts, 1)
+                RBRA    _ROSMS_RET, 1
+
+_ROSMS_1        ; Iterate through the 16 windows of M2M$CFM_DATA to detect
                 ; changes because we only save if there are changes
                 RSUB    ROSM_CHANGES, 1
                 RBRA    _ROSMS_RET, !C
 
-                ; Start at the beginning of the config file (R8: file handle)
+                ; Start at the beginning of the config file
+                MOVE    CONFIG_FILE, R8
                 XOR     R9, R9                  ; restart reading from byte 0
                 XOR     R10, R10
                 SYSCALL(f32_fseek, 1)
@@ -670,6 +737,8 @@ _ROSMS_3        MOVE    R0, @R1                 ; new M2M$CFM_DATA "window"
 
 _ROSMS_4A       MOVE    M2M$RAMROM_DEV, R4      ; do we need to ignore the..
                 MOVE    M2M$CONFIG, @R4         ; current bit?
+
+                ; exclude OPTM_G_MOUNT_DRV items
                 MOVE    M2M$RAMROM_4KWIN, R4
                 MOVE    M2M$CFG_OPTM_MOUNT, @R4 ; yes we need to ignore, if..
                 MOVE    M2M$RAMROM_DATA, R4     ; ..the menu item is about..
@@ -679,7 +748,17 @@ _ROSMS_4A       MOVE    M2M$RAMROM_DEV, R4      ; do we need to ignore the..
                 XOR     R9, R9                  ; ignoring means writing a 0
                 RBRA    _ROSMS_5, 1
 
-_ROSMS_4B       XOR     R9, R9
+                ; exclude OPTM_G_LOAD_ROM items
+_ROSMS_4B       MOVE    M2M$RAMROM_4KWIN, R4
+                MOVE    M2M$CFG_OPTM_CRTROM, @R4
+                MOVE    M2M$RAMROM_DATA, R4
+                ADD     R3, R4
+                CMP     1, @R4
+                RBRA    _ROSMS_4C, !Z
+                XOR     R9, R9
+                RBRA    _ROSMS_5, 1
+
+_ROSMS_4C       XOR     R9, R9
                 MOVE    R7, R6
                 AND     @R2, R6                 ; current bit set?
                 RBRA    _ROSMS_5, Z             ; no: write R9, which is 0
@@ -713,7 +792,7 @@ _ROSMS_7        SYSCALL(f32_fflush, 1)          ; flush SD write buffer
 
                 ; Log success message
 _ROSMS_8        MOVE    LOG_STR_CFG_REM, R8
-                SYSCALL(puts, 1)                
+                SYSCALL(puts, 1)
 
 _ROSMS_RET      SYSCALL(leave, 1)
                 RET
@@ -725,12 +804,67 @@ _ROSMS_RET      SYSCALL(leave, 1)
 ; Menu initialization record (needed by OPTM_INIT)
 ; Will be copied to the HEAP, together with the configuration data from
 ; config.vhd and then modified to point to the right addresses on the heap
-OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, SCR$PRINTSTR, SCR$PRINTSTRXY
-                .DW     OPT_PRINTLINE, OPTM_SELECT, OPT_MENU_GETKEY
-                .DW     OPTM_CB_SEL, OPTM_CB_SHOW,
+OPT_MENU_DATA   .DW     SCR$CLR, SCR$PRINTFRAME, OPT_PRINTSTR, SCR$PRINTSTRXY
+                .DW     OPT_PRINTLINE, OPT_SELECT, OPT_MENU_GETKEY
+                .DW     OPTM_CB_SEL, OPTM_CB_SHOW, FATAL,
                 .DW     M2M$OPT_SEL_MULTI, 0    ; selection char + zero term.:
                 .DW     M2M$OPT_SEL_SINGLE, 0   ; multi- and single-select
                 .DW     0, 0, 0, 0, 0           ; will be filled dynamically
+
+; Print function that handles everything incl. cursor pos and \n by itself
+; R8 contains the string that shall be printed
+; R9 contains a pointer to a mask array: the first word is the size of the
+;    array (and therefore the amount of menu items) and then we have one entry
+;    (word) per menu line: If the highest bit is one, then OPTM_FP_PRINT will
+;    print the line otherwise it will skip the line
+OPT_PRINTSTR    SYSCALL(enter, 1)
+
+                MOVE    @R9++, R0               ; R0: size of menu
+                MOVE    R9, R1                  ; R1: pointer to mask array
+                MOVE    R8, R2                  ; R2: current string segment
+                MOVE    SP, R3                  ; R3: remember stack pointer
+                XOR     R4, R4                  ; R4: item counter
+
+_OPT_PRINTSTR_1 MOVE    R2, R8                  ; treat current seg. as start
+
+                MOVE    OPTM_NL, R9             ; string containing \n
+                SYSCALL(strstr, 1)              ; search in input string
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPT_PRINTSTR_F, Z      ; no: fatal
+
+                MOVE    R10, R6                 ; R6: length of segment..
+                SUB     R2, R6                  
+                ADD     2, R6                   ; ..including \n                              
+
+                CMP     @R1++, 0x7FFF           ; print current item?
+                RBRA    _OPT_PRINTSTR_2, !N     ; no: next iteration
+
+                ; copy current segment to the stack so that we can add a
+                ; zero terminator so that SCR$PRINTSTR can print it
+                SUB     R6, SP                  ; reserve space on stack
+                SUB     1, SP                   ; add space for zero term.
+                MOVE    R2, R8                  ; copy string segment
+                MOVE    SP, R9
+                MOVE    R6, R10
+                SYSCALL(memcpy, 1)
+                ADD     R6, R9
+                MOVE    0, @R9                  ; add zero terminator
+                MOVE    SP, R8                  ; print current segment
+                RSUB    SCR$PRINTSTR, 1
+
+                MOVE    R3, SP                  ; restore stack pointer
+
+_OPT_PRINTSTR_2 ADD     R6, R2                  ; skip current segment
+                ADD     1, R4                   ; next item
+                CMP     R0, R4                  ; done?
+                RBRA    _OPT_PRINTSTR_1, !Z     ; no: iterate
+
+                SYSCALL(leave, 1)               ; yes, done: return
+                RET
+
+_OPT_PRINTSTR_F MOVE    ERR_F_NEWLINE, R8      ; fatal due to missing newline
+                XOR     R9, R9
+                RBRA    FATAL, 1                
 
 ; Draws a horizontal line/menu separator at the y-pos given in R8, dx in R9
 OPT_PRINTLINE   INCRB
@@ -769,7 +903,7 @@ _PRINTLN_L      MOVE    M2M$NC_SH, @R3++
 ; R9=1: select
 ; R9=2: print headline/title highlighted
 ; R9=3: select highlighted headline/title
-OPTM_SELECT     INCRB
+OPT_SELECT      INCRB
 
                 MOVE    OPTM_X, R0              ; R0: x start coordinate
                 MOVE    @R0, R0
@@ -834,6 +968,8 @@ OPT_MENU_GETKEY INCRB
 _OPTMGK_LOOP    RSUB    HANDLE_IO, 1            ; IO handling (e.g. vdrives)
                 RSUB    VD_MNT_ST_GET, 1        ; did mount status change..
                 RSUB    _OPTM_GK_MNT, C         ; ..while OPTM is open?
+                RSUB    CRTROM_MLST_GET, 1      ; CRT/ROM ld status changed..
+                RSUB    _OPTM_GK_CRTROM, C      ; ..while OPTM is open?
                 RSUB    VD_DTY_ST_GET, 1        ; did cache status change..
                 RBRA    _OPTMGK_KEYSCAN, !C     ; ..while OPTM is open?
                 RSUB    OPTM_SHOW, 1            ; yes: redraw menu and..
@@ -879,9 +1015,9 @@ _OPTMGK_RET     DECRB
                 RET
 
                 ; the archetypical situation that the mount status changes
-                ; "in the background" (i.e. not controlled by any) callback
-                ; function, while the OPTM is open is a "Smart Reset" reset of
-                ; the core. "Core" as in "core only", not the M2M framework.
+                ; "in the background", i.e. not controlled by any callback
+                ; function while the OPTM is open, is a "Smart Reset" reset
+                ; of the core. "Core" as in "core only", not the framework.
 _OPTM_GK_MNT    SYSCALL(enter, 1)
 
                 RSUB    VD_ACTIVE, 1            ; are there any vdrives?
@@ -911,7 +1047,7 @@ _OPTM_GK_MNT_2  MOVE    R9, R8
                 RBRA    _OPTM_GK_MNT_3, 1
 _OPTM_GK_MNT_X1 MOVE    1, R9
 
-_OPTM_GK_MNT_3  RSUB    _HM_SETMENU, 1          ; set/unset menu item
+_OPTM_GK_MNT_3  RSUB    OPTM_SET, 1             ; set/unset menu item
                                                 ; (R8=menu item, R9=value)
 
                 ; update M2M$CFM_DATA accordingly:
@@ -946,7 +1082,8 @@ _OPTM_GK_MNT_5  ADD     1, R0
 
                 ; a core-reset unmounts some or all drives: redraw menu to
                 ; make sure that the drives are not shown as mounted any more
-                RSUB    OPTM_SHOW, 1
+                ; (this routine is also used by _OPTM_GK_CRTROM)
+_OPTM_GK_MNT_S  RSUB    OPTM_SHOW, 1
 
                 ; re-show the currently selected item
                 MOVE    OPTM_CUR_SEL, R8
@@ -955,6 +1092,37 @@ _OPTM_GK_MNT_5  ADD     1, R0
                 RSUB    OPTM_SELECT, 1
 
 _OPTM_GK_MNT_R  SYSCALL(leave, 1)
+                RET
+
+                ; This helper function is similar _OPTM_GK_MNT but it is
+                ; all about manually loadable CRTs/ROMs
+                ; R8: CRT/ROM ID of the manually loadable CRT/ROM which
+                ;     has a changed status
+                ; R9: new status of this very CRT/ROM
+_OPTM_GK_CRTROM SYSCALL(enter, 1)
+
+_OPTM_GK_CR_0   MOVE    R9, R0
+                RSUB    CRTROM_M_GI, 1          ; convert id into menu idx
+                RBRA    _OPTM_GK_CR_1, C        ; OK: continue
+                MOVE    ERR_FATAL_INST, R8      ; not OK: fatal
+                MOVE    ERR_FATAL_INSTB, R9
+                RBRA    FATAL, 1
+
+                ; change visual and register representation
+_OPTM_GK_CR_1   MOVE    R9, R8                  ; R8: menu index
+                MOVE    R0, R9                  ; R9: set/unset
+                RSUB    OPTM_SET, 1             ; visual representation
+                RSUB    M2M$SET_SETTING, 1      ; register representation
+
+                ; next iteration: one call of CRTROM_MLST_GET does not
+                ; capture all possible changes
+                RSUB    CRTROM_MLST_GET, 1
+                RBRA    _OPTM_GK_CR_0, C
+
+                ; redraw menu and then call SYSCALL(leave, 1) and RET
+                RBRA    _OPTM_GK_MNT_S, 1
+
+_OPTM_GK_CR_R   SYSCALL(leave, 1)
                 RET
 
 ; ----------------------------------------------------------------------------
@@ -974,39 +1142,66 @@ _OPTM_GK_MNT_R  SYSCALL(leave, 1)
 
 OPTM_CB_SEL     INCRB
 
+                ; Remember selected menu group as Context Data so that the
+                ; user of the framework can implement specialized behaviors
+                ; for certain menu items
+                MOVE    SF_CONTEXT_DATA, R1
+                MOVE    @R1, R0
+                MOVE    R8, @R1
+                AND     0x00FF, @R1             ; only the actual ID
+
+                INCRB
+
                 ; Special treatment for help menu items
                 RSUB    HANDLE_HELP, 1
-                RBRA    _OPTMC_NOMNT, C         ; if help then no drive mount
+                RBRA    _OPTMC_NOMNT_1, C       ; if help then no drive mount
 
-                ; Special treatment for drive-mount items: Drive-mount items
-                ; are per definition also single-select items
+                ; Special treatment for drive-mount items and for manual
+                ; CRT and ROM load items: These type of items are per
+                ; definition also single-select items
                 MOVE    R8, R0                  ; R8: selected menu group
                 MOVE    R0, R1                  ; R1: save selected group
+                MOVE    R9, R2                  ; R2: save select item in grp
                 AND     OPTM_SINGLESEL, R0      ; single-select item?
-                RBRA    _OPTMC_NOMNT, Z         ; no: proceed to std. beh.
-                RSUB    VD_ACTIVE, 1            ; are there any vdrives?
-                RBRA    _OPTMC_NOMNT, !C        ; no: proceed to std. beh.
-                MOVE    R1, R8                  ; R1: selected menu group
-                RSUB    VD_DRVNO, 1             ; is menu item a mount item?
-                RBRA    _OPTMC_NOMNT, !C        ; no: : proceed to std. beh.
+                RBRA    _OPTMC_NOMNT_1, Z       ; no: proceed to std. beh.
 
-                ; Handle mounting
-                ; Input:
-                ;   R8 contains the drive number at this point
-                ;   R9=OPTM_KEY_SELECT:
-                ;      Just replace the disk image, if it has been mounted
-                ;      before without unmounting the drive (aka without
-                ;      resetting the drive/"switching the drive on/off")
-                ;   R9=OPTM_KEY_SELALT:
-                ;      Unmount the drive (aka "switch the drive off")
-                ;
+                ; Virtual drive mounting?
+                RSUB    VD_ACTIVE, 1            ; are there any vdrives?
+                RBRA    _OPTMC_CHKCR, !C        ; no: proceed to CRT/ROM chk
+                MOVE    R1, R8                  ; restore R8
+                RSUB    VD_DRVNO, 1             ; is menu item a mount item?
+                RBRA    _OPTMC_CHKCR, !C        ; no: proceed to CRT/ROM chk
+
+                ; Handle virtual drive mounting
                 ; It is important that the standard behavior runs after the
                 ; mounting is done, this is why we do RSUB and not RBRA
-                MOVE    R10, R9
-                RSUB    HANDLE_MOUNTING, 1             
+_OPTMC_MOUNT    MOVE    R10, R9                 ; selection mode
+                XOR     R10, R10                ; virtual drive mode
+                RSUB    HANDLE_MOUNTING, 1
+                RBRA    _OPTMC_NOMNT_0, 1       ; standard behavior
+
+                ; Manual CRT or ROM loading?
+_OPTMC_CHKCR    RSUB    CRTROM_ACTIVE, 1        ; any manual CRTs/ROMs avail.?
+                RBRA    _OPTMC_NOMNT_0, !C      ; no: proceed to std. behvr.
+                MOVE    R1, R8                  ; restore R8
+                RSUB    CRTROM_M_NO, 1          ; is menu item man. CRT/ROM?
+                RBRA    _OPTMC_NOMNT_0, !C      ; no: proceed to std. behvr.
+
+                ; Handle manual CRT/ROM loading
+                ; R8 contains the CRT/ROM number at this point
+                ; It is important that the standard behavior runs after the
+                ; loading is done
+                MOVE    R10, R9                 ; selection mode
+                MOVE    1, R10                  ; CRT/ROM load mode
+                RSUB    HANDLE_MOUNTING, 1
+
+_OPTMC_NOMNT_0  MOVE    R1, R8                  ; restore R8
+                MOVE    R2, R9                  ; restore R9
 
                 ; Standard behavior
-_OPTMC_NOMNT    CMP     OPTM_CLOSE, R8          ; CLOSE = no changes: leave
+_OPTMC_NOMNT_1  MOVE    R8, R7                  ; For detecting CLOSE, we..
+                AND     0x00FF, R7              ; ..only look at low-byte
+                CMP     OPTM_CLOSE, R7          ; CLOSE = no changes: leave
                 RBRA    _OPTMCB_RET, Z
 
                 MOVE    OPTM_ICOUNT, R0         ; R0: amount of menu items
@@ -1043,6 +1238,11 @@ _OPTMCB_E       SUB     1, R0
                 RBRA    _OPTMCB_A, !Z
 
 _OPTMCB_RET     DECRB
+
+                MOVE    SF_CONTEXT_DATA, R1
+                MOVE    R0, @R1                 ; restore context
+
+                DECRB
                 RET
 
 
@@ -1051,11 +1251,24 @@ _OPTMCB_RET     DECRB
 ; if there is a "%s" within a menu item.
 ;
 ; menu.asm is not aware of the semantics that we are implementing here:
+;
+; Case (a) Submenus:
+;
+; In case of submenus, the semantics can be defined by the user of the
+; framework in SUBMENU_SUMMARY in m2m-rom.asm. The standard semantics are:
+; Replace %s by the selected menu item of the first menu group. If there is
+; no menu group then fatal, because then one should not have put an %s in the
+; headline - or - one should have used SUBMENU_SUMMARY to define a custom
+; semantics.
+;
+; Case (b) Virtual drives and CRT/ROM loading
+;
 ; "%s" is meant to denote the space where we will either print
-; OPTM_S_MOUNT from config.vhd, which is "<Mount Drive>" by default, if the
-; drive is not mounted, yet, or we print the file name of the disk image,
-; abbreviated to the width of the frame. We also handle the "cache diry"
-; situation and show OPTM_S_SAVING which defaults to "<Saving>".
+; OPTM_S_MOUNT/OPTM_S_CRTROM from config.vhd, which is "<Mount>" and "<Load>"
+; by default, if the drive/rom is not mounted/loaded, yet, or we print the
+; file name of the disk image, abbreviated to the width of the frame. We also
+; handle the "cache dirty" situation and show OPTM_S_SAVING which defaults
+; to "<Saving>".
 ;
 ; Input:
 ;   R8: pointer to the string that includes the "%s"
@@ -1072,6 +1285,7 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
 
                 MOVE    R8, R0                  ; R0: string pointer
                 MOVE    R0, R7
+                MOVE    R9, R5                  ; R5: remember R9
 
                 ; get menu group ID associated with this menu item
                 ; (mount menu items need to have unique group IDs)
@@ -1083,11 +1297,207 @@ OPTM_CB_SHOW    SYSCALL(enter, 1)
                 ADD     R9, R1
                 MOVE    @R1, R1                 ; R1: menu group id
 
+                MOVE    M2M$RAMROM_DATA, R6
+                MOVE    OPTM_ICOUNT, R3
+                ADD     @R3, R6                 ; R6: 1 word behind last item
+
+                ; ------------------------------------------------------------
+                ; Case (a): Submenus
+                ; ------------------------------------------------------------
+
+                MOVE    R1, R2
+                MOVE    R5, R4                  ; remember R5: menu index
+                AND     OPTM_SUBMENU, R2        ; is this group id a submenu?
+                RBRA    _OPTM_CBS_VD, Z         ; no: go on with case (b)
+
+                ; Check if the M2M user defined a custom SUBMENU_SUMMARY and
+                ; if yes, use the string returned by SUBMENU_SUMMARY
+                MOVE    R9, R10
+                MOVE    M2M$RAMROM_DATA, R9
+                ADD     R10, R9                 ; R9: ptr to current men. item
+                MOVE    R6, R10                 ; R10: end-of-menu marker
+                RSUB    SUBMENU_SUMMARY, 1
+                MOVE    R8, R0                  ; custom SUBMENU_SUMMARY?
+                RBRA    _OPTM_CBS_RET, !Z       ; yes
+                MOVE    R7, R0                  ; no: standard semantics
+                MOVE    R9, R3                  ; 3: ptr to current men. item
+
+                ; Search for the first menu group within the submenu and
+                ; within this menu group, find the currently selected item
+_OPTM_CBS_A     ADD     1, R3                   ; next item
+                CMP     R6, R3                  ; end of (overall)menu?
+                RBRA    _OPTM_CBS_B, !Z         ; no: continue
+                MOVE    ERR_F_MENUSUB, R8       ; yes: fatal
+                XOR     R9, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_B     MOVE    @R3, R1
+                AND     OPTM_SUBMENU, R1        ; end-of-submenu marker?
+                RBRA    _OPTM_CBS_C, Z          ; no: continue
+                MOVE    ERR_F_MENUNGRP, R8      ; yes: fatal
+                MOVE    R5, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_C     MOVE    @R3, R8
+                MOVE    1, R9
+                MOVE    255, R10
+                SYSCALL(in_range_u, 1)          ; is the item a menu group?
+                RBRA    _OPTM_CBS_A, !C         ; no: next item
+                MOVE    HEAP, R8                ; get selected menu group item
+                ADD     OPTM_IR_STDSEL, R8
+                MOVE    @R8, R8
+                ADD     R3, R8
+                SUB     M2M$RAMROM_DATA, R8     ; R3 is relative to RAMROM_DTA
+                MOVE    @R8, R8                 ; is the item selected?
+                RBRA    _OPTM_CBS_A, Z          ; no
+
+                ; extract the label of the selected item from the \n separated
+                ; OPTM_ITEMS string
+                SUB     M2M$RAMROM_DATA, R3     ; R3: index of selected item
+                MOVE    HEAP, R1
+                ADD     OPTM_IR_ITEMS, R1
+                MOVE    @R1, R1                 ; R1: current segment in strng
+                XOR     R2, R2                  ; R2: loop variable
+_OPTM_CBS_D     MOVE    R1, R8
+                MOVE    OPTM_NL, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPTM_CBS_E, !Z         ; yes: proceed
+                MOVE    ERR_FATAL_INST, R8      ; no: fatal
+                MOVE    ERR_FATAL_INST1, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_E     CMP     R2, R3                  ; selected item reached?
+                RBRA    _OPTM_CBS_F, Z          ; yes
+                ADD     2, R10                  ; no: skip \n and proceed
+                MOVE    R10, R1
+                ADD     1, R2
+                RBRA    _OPTM_CBS_D, 1          ; next item
+
+                ; find next \n to determine the length of the current segment
+                ; and copy it to the stack so that we can add a zero-terminatr
+                ; to make sure that the \n is not derailing M2M$RPL_S
+_OPTM_CBS_F     MOVE    R1, R8
+                MOVE    OPTM_NL, R9
+                SYSCALL(strstr, 1)
+                CMP     0, R10                  ; \n found?
+                RBRA    _OPTM_CBS_G, !Z         ; yes: proceed
+                MOVE    ERR_FATAL_INST, R8      ; no: fatal
+                MOVE    ERR_FATAL_INST1, R9
+                RBRA    FATAL, 1
+_OPTM_CBS_G     MOVE    SP, R7                  ; remember SP
+                MOVE    R1, R8
+                SUB     R8, R10                 ; R10: length until \n
+                SUB     R10, SP
+                SUB     1, SP                   ; room for zero-terminator
+                MOVE    SP, R9
+                SYSCALL(memcpy, 1)
+                MOVE    R9, R1                  ; R1: replacement string segm.
+                ADD     R10, R9
+                MOVE    0, @R9                  ; add zero terminator
+
+                ; Get rid of leading spaces. We can assume that the string
+                ; consists at least of a %s, so there will be at least a bunch
+                ; non-space characters
+_OPTM_CBS_H     CMP     0x0020, @R1
+                RBRA    _OPTM_CBS_I, !Z         ; non-space character found
+                ADD     1, R1
+                RBRA    _OPTM_CBS_H, 1
+
+                ; Determine position in OPTM_HEAP that we can use for our
+                ; string replacement: The space that can be used for 
+                ; the headline/label strings of submenus is directly after the
+                ; abbreviated filenames of the vdrives.
+                ;
+                ; We need to calculate which submenu is currently being
+                ; processed by OPTM_CB_SHOW. Since submenus do not have any
+                ; unique ID, we need to find out by counting: We walk through
+                ; M2M$CFG_OPTM_GROUPS until we reach the index of the
+                ; currently processed menu item (which is stored in R5) and
+                ; while doing so, we count the index of the current submenu.
+                ;
+                ; Then we take this result and calculate the position on the
+                ; heap which is:
+                ; (Amount of vdrives + current submenu index) * @SCR$OSM_O_DX
+
+                ; Calculate such submenu is currently being processed
+_OPTM_CBS_I     MOVE    SCRATCH_HEX, R8         ; save cur. device selection
+                RSUB    SAVE_DEVSEL, 1
+                MOVE    R4, R8                  ; R8: index of menu item
+                INCRB
+
+                MOVE    OPTM_ICOUNT, R0         ; check: valid menu index?
+                MOVE    @R0, R0
+                SUB     1, R0                   ; we count from zero
+                CMP     R8, R0                  ; illegal index?
+                RBRA    _OPTM_CBS_I1, !N        ; no
+                MOVE    ERR_FATAL_INST, R8      ; yes: fatal
+                MOVE    ERR_FATAL_INST8, R9
+                RBRA    FATAL, 1
+
+_OPTM_CBS_I1    MOVE    M2M$RAMROM_DEV, R0
+                MOVE    M2M$CONFIG, @R0
+                MOVE    M2M$RAMROM_4KWIN, R0
+                MOVE    M2M$CFG_OPTM_GROUPS, @R0
+                MOVE    M2M$RAMROM_DATA, R0
+
+                MOVE    -1, R9                  ; submenu index
+
+_OPTM_CBS_I2    MOVE    @R0++, R1               ; is current item a submenu?
+                MOVE    R1, R2
+                AND     OPTM_SUBMENU, R1
+                RBRA    _OPTM_CBS_I3, Z         ; no
+                AND     0x00FF, R2              ; yes, but is it a close flag?
+                CMP     OPTM_CLOSE, R2
+                RBRA    _OPTM_CBS_I3, Z         ; yes: so do not count it
+                ADD     1, R9                   ; no: increase submenu index
+
+_OPTM_CBS_I3    CMP     0, R8                   ; done?
+                RBRA    _OPTM_CBS_I4, Z         ; yes
+                SUB     1, R8                   ; one less menu item
+                RBRA    _OPTM_CBS_I2, 1         ; no
+_OPTM_CBS_I4    DECRB
+                MOVE    SCRATCH_HEX, R8         ; restore cur. dev. selection
+                RSUB    RESTORE_DEVSEL, 1
+                CMP     0, R9                   ; illegal submenu index?
+                RBRA    _OPTM_CBS_I5, !V        ; no: proceed
+                MOVE    ERR_FATAL_INST, R8      ; yes: fatal
+                MOVE    ERR_FATAL_INST9, R9
+                RBRA    FATAL, 1
+
+                ; Calculate OPTM_HEAP position we can use for str. replacement
+                ; R9 contains the submenu index:
+                ; (Amount of vdrives + current submenu index) * @SCR$OSM_O_DX                
+_OPTM_CBS_I5    MOVE    VDRIVES_NUM, R8
+                MOVE    @R8, R8
+                ADD     R9, R8
+                MOVE    SCR$OSM_O_DX, R9
+                MOVE    @R9, R9
+                MOVE    R9, R5                  ; R5: @SCR$OSM_O_DX
+                SYSCALL(mulu, 1)                ; R10: result
+
+                ; Perform the string replacement
+                MOVE    R0, R8                  ; R8: source string
+                MOVE    OPTM_HEAP, R9           ; R9: target string
+                MOVE    @R9, R9
+                ADD     R10, R9
+                MOVE    R1, R10                 ; R10: replacement for %s
+                MOVE    R5, R11                 ; R11: max. amt. of chars
+                SUB     2, R11
+                RSUB    M2M$RPL_S, 1            ; replace %s
+
+                ADD     1, @R2                  ; next iteration of callback
+                MOVE    R9, R0                  ; return target string
+                MOVE    R7, SP                  ; restore SP
+
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
+
+                ; ------------------------------------------------------------
+                ; Case (b-1): Virtual Drives
+                ; ------------------------------------------------------------
+
                 ; VD_DRVNO checks if the menu item is associated with a
                 ; virtual drive and returns the virtual drive number in R8
-                MOVE    R1, R8
+_OPTM_CBS_VD    MOVE    R1, R8
                 RSUB    VD_DRVNO, 1
-                RBRA    _OPTM_CBS_RET, !C
+                RBRA    _OPTM_CBS_CTRM, !C
 
                 ; the position of the string for each virtual drive number
                 ; equals virtual drive number times @SCR$OSM_O_DX, because
@@ -1215,6 +1625,64 @@ _OPTM_CBS_4     MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 ADD     R0, R8
                 MOVE    1, @R8
 
+                ; ------------------------------------------------------------
+                ; Case (b-2): CRTs/ROMs
+                ; ------------------------------------------------------------
+
+                ; CRTROM_M_NO checks if the menu item is associated with a
+                ; manual loadable CRT/ROM and returns the CRT/ROM number in R8
+_OPTM_CBS_CTRM  MOVE    R1, R8
+                RSUB    CRTROM_M_NO, 1
+                RBRA    _OPTM_CBS_RET, !C
+                MOVE    ERR_FATAL_INST6, R9
+                RSUB    CRTROM_CHK_NO, 1        ; double-check sys. stability
+                MOVE    R8, R1                  ; R1: CRT/ROM number
+
+                ; Calculate the address on the heap that we can use as a
+                ; scratch buffer for our string: (Amount of vdrives plus
+                ; amount of submenus + CRT/ROM id (in R8)) times @SCR$OSM_O_DX
+                MOVE    VDRIVES_NUM, R2
+                ADD     @R2, R8
+                MOVE    OPTM_SCOUNT, R2
+                ADD     @R2, R8
+                MOVE    SCR$OSM_O_DX, R9
+                MOVE    @R9, R9
+                MOVE    R9, R5                  ; R5: @SCR$OSM_O_DX
+                SYSCALL(mulu, 1)                ; R10: result
+                MOVE    OPTM_HEAP, R0           ; R0: target address on heap
+                MOVE    @R0, R0
+                ADD     R10, R0
+
+                ; Has any CRT/ROM for the current line item been loaded
+                ; already? Yes: Then we replace the %s by the filename,
+                ; otherwise we replace it by the default string OPTM_S_CRTROM
+                ; from config.vhd
+                MOVE    CRTROM_MAN_LDF, R2
+                ADD     R1, R2
+                CMP     1, @R2
+                RBRA    _OPTM_CBS_CTRM1, Z      ; yes: replace by filename
+
+                ; Replace %s by default value
+                MOVE    M2M$RAMROM_DEV, R3      ; replace %s w. OPTM_S_CRTROM
+                MOVE    M2M$CONFIG, @R3
+                MOVE    M2M$RAMROM_4KWIN, R3
+                MOVE    M2M$CFG_OPTM_CRSTR, @R3
+                MOVE    M2M$RAMROM_DATA, R8
+                RSUB    _OPTM_CBS_REPL, 1
+                RBRA    _OPTM_CBS_RET, 1
+
+                ; Replace %s by filename by leveraging the existing
+                ; routine above in _OPTM_CBS_3, but only if not already
+                ; replaced. Within "Case (b-1)" above, see "Case #2b" to learn
+                ; how the mechanism works.
+_OPTM_CBS_CTRM1 MOVE    SCR$OSM_O_DX, R8        ; read "%s is replaced" flag
+                MOVE    @R8, R8
+                SUB     1, R8
+                ADD     R0, R8
+                CMP     1, @R8                  ; did we replace earlier?
+                RBRA    _OPTM_CBS_3, !Z         ; no: do the replacement
+                                                ; yes: return
+
 _OPTM_CBS_RET   MOVE    R0, @--SP               ; lift R0 over the leave hump
                 SYSCALL(leave, 1)
                 MOVE    @SP++, R8
@@ -1225,94 +1693,15 @@ _OPTM_CBS_RET   MOVE    R0, @--SP               ; lift R0 over the leave hump
                 ; expects the input string that has the "%s" that shall
                 ; be replaced in R7 and actual replacement for the "%s"
                 ; is expected in R8
-_OPTM_CBS_REPL  MOVE    R8, R6                  ; remember R8
-                MOVE    R7, R8                  ; find "%s" in R7
-                MOVE    _OPTM_CBS_S, R9
-                SYSCALL(strstr, 1)
-                CMP     0, R10                  ; R10: position of %s
-                RBRA    _OPTM_CBSR_1, !Z
-
-                ; if "%s" is not being found at this place, then something
-                ; went wrong terribly
-                MOVE    ERR_FATAL_INST, R8
-                MOVE    ERR_FATAL_INST1, R9
-                RBRA    FATAL, 1
-
-                ; copy the string from 0 to one before %s to the output buf.
-_OPTM_CBSR_1    MOVE    R10, R2                 ; R2: save %s pos, later use
-                SUB     R7, R10
-                MOVE    R7, R8
+_OPTM_CBS_REPL  MOVE    R8, R10
                 MOVE    R0, R9
-                SYSCALL(memcpy, 1)
+                MOVE    R7, R8
 
                 ; the maximum width that we have to display the string is
                 ; @SCR$OSM_O_DX minus 2 because of the frame
-                MOVE    SCR$OSM_O_DX, R4
-                MOVE    @R4, R4
-                SUB     2, R4                   ; R4: max width
+                MOVE    SCR$OSM_O_DX, R11
+                MOVE    @R11, R11
+                SUB     2, R11                  ; R11: max width
 
-                ; overwrite the "%s" from the "%" on with new string, make
-                ; sure that we are not longer than the max width, which is
-                ; @SCR$OSM_O_DX
-                ; R10 contains the length of the string before the %s
-                MOVE    R6, R8                  ; replacement string
-                SYSCALL(strlen, 1)
-                ADD     R10, R9                 ; prefix string + repl. string
-
-                CMP     R9, R4                  ; is it larger than max width?
-                RBRA    _OPTM_CBSR_3, N         ; yes
-                MOVE    R0, R9                  ; R8 still points to repl. str
-                ADD     R10, R9                 ; ptr to "%"
-                SYSCALL(strcpy, 1)
-
-                ; if we land here, we successfully used "prefix" + "%s"; now
-                ; lets check, if we can add parts or everything of the
-                ; "suffix", i.e. the part after the "%s"
-                MOVE    R0, R8
-                SYSCALL(strlen, 1)
-                MOVE    R9, R3                  ; R3: size of concat string
-                CMP     R3, R4                  ; R3 < max width?
-                RBRA    _OPTM_CBSR_RET, Z       ; no (< means not Z)
-                RBRA    _OPTM_CBSR_RET, N       ; no (< means also not N)
-                
-                ADD     2, R2                   ; R2: first char behind "%s"
-                MOVE    R2, R8
-                SYSCALL(strlen, 1)
-                CMP     0, R9                   ; is there anything to add?
-                RBRA    _OPTM_CBSR_RET, Z       ; no
-
-                SUB     R3, R4                  ; R4 = max amt. chars to add
-
-                ; pick the minimum of (R4: max. amt. chars to add) and
-                ; (R9: size of "suffix") and copy the data into the buffer
-                CMP     R4, R9                  ; R4 > R9?
-                RBRA    _OPTM_CBSR_2, !N        ; no
-                MOVE    R9, R4                  ; yes: then use R9 instead
-_OPTM_CBSR_2    MOVE    R2, R8                  ; first char behind "%s"
-                MOVE    R0, R9
-                ADD     R3, R9                  ; last char of concat string
-                MOVE    R4, R10                 ; amount of chars to copy
-                SYSCALL(memcpy, 1)
-                ADD     R10, R9                 ; add zero terminator
-                MOVE    0, @R9
-                RBRA    _OPTM_CBSR_RET, 1
-
-                ; if we land here, the overall string consisting of the first
-                ; two parts ("prefix" + "%s") is too long, so we may only copy
-                ; the maximum amount and we need to add an
-                ; ellipsis (aka "...") at the end
-_OPTM_CBSR_3    MOVE    R0, R9
-                ADD     R10, R9
-                MOVE    R4, R5
-                SUB     R10, R5                 ; max amount we can copy
-                MOVE    R5, R10         
-                SYSCALL(memcpy, 1)
-                ADD     R10, R9                 ; add zero terminator
-                MOVE    0, @R9
-                SUB     3, R9                   ; add ellipsis
-                MOVE    FN_ELLIPSIS, R8
-                SYSCALL(strcpy, 1)
-
-_OPTM_CBSR_RET  RET
-
-_OPTM_CBS_S     .ASCII_W "%s"
+                RSUB    M2M$RPL_S, 1
+                RET

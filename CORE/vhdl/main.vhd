@@ -15,7 +15,7 @@ use work.video_modes_pkg.all;
 
 entity main is
    generic (
-      G_VDNUM                 : natural                     -- amount of virtual drives     
+      G_VDNUM                 : natural                     -- amount of virtual drives
    );
    port (
       clk_main_i              : in  std_logic;
@@ -25,8 +25,8 @@ entity main is
 
       -- MiSTer core main clock speed:
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
-      clk_main_speed_i        : in natural;
-            
+      clk_main_speed_i        : in  natural;
+
       -- Video output
       video_ce_o              : out std_logic;
       video_ce_ovl_o          : out std_logic;
@@ -38,15 +38,15 @@ entity main is
       video_hs_o              : out std_logic;
       video_hblank_o          : out std_logic;
       video_vblank_o          : out std_logic;
-      
+
       -- Audio output (Signed PCM)
       audio_left_o            : out signed(15 downto 0);
       audio_right_o           : out signed(15 downto 0);
-      
+
       -- M2M Keyboard interface
       kb_key_num_i            : in  integer range 0 to 79;    -- cycles through all MEGA65 keys
       kb_key_pressed_n_i      : in  std_logic;                -- low active: debounced feedback: is kb_key_num_i pressed right now?
-      
+
       -- MEGA65 joysticks and paddles/mouse/potentiometers
       joy_1_up_n_i            : in  std_logic;
       joy_1_down_n_i          : in  std_logic;
@@ -60,10 +60,10 @@ entity main is
       joy_2_right_n_i         : in  std_logic;
       joy_2_fire_n_i          : in  std_logic;
 
-      pot1_x_i                : in std_logic_vector(7 downto 0);
-      pot1_y_i                : in std_logic_vector(7 downto 0);
-      pot2_x_i                : in std_logic_vector(7 downto 0);
-      pot2_y_i                : in std_logic_vector(7 downto 0)      
+      pot1_x_i                : in  std_logic_vector(7 downto 0);
+      pot1_y_i                : in  std_logic_vector(7 downto 0);
+      pot2_x_i                : in  std_logic_vector(7 downto 0);
+      pot2_y_i                : in  std_logic_vector(7 downto 0)
    );
 end entity main;
 
