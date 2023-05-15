@@ -88,8 +88,6 @@ signal audio             : std_logic_vector(15 downto 0);
 
 signal dsw_a : std_logic_vector(7 downto 0);
 signal dsw_b : std_logic_vector(7 downto 0);
-signal dsw_self_test : std_logic;
-signal dsw_service   : std_logic;
 
 -- inputs
 
@@ -109,16 +107,21 @@ signal hs_write_enable  : std_logic;
 
 signal hs_pause         : std_logic;
 
--- Game inputs
-constant m65_5             : integer := 16; --Insert coin 1
-constant m65_6             : integer := 19; --Insert coin 2
+-- Game player inputs
 constant m65_1             : integer := 56; --Player 1 Start
 constant m65_2             : integer := 59; --Player 2 Start
--- Offer some keyboard controls in addition to joy 1
+constant m65_5             : integer := 16; --Insert coin 1
+constant m65_6             : integer := 19; --Insert coin 2
+
+-- Offer some keyboard controls in addition to Joy 1 Controls
 constant m65_a             : integer := 10; --Player left
 constant m65_d             : integer := 18; --Player right
 constant m65_up_crsr       : integer := 73; --Player fire
+
+-- Pause, credit button & test mode
 constant m65_p             : integer := 41; --Pause button
+constant m65_s             : integer := 13; --Service 1
+constant m65_capslock      : integer := 72; --Service Mode
 
 
 
@@ -127,9 +130,7 @@ begin
     -- need to connect DIPs to menu items but for now we will set them all to OFF position
     dsw_a <= (others => '0');
     dsw_b <= (others => '0');
-    dsw_self_test <= '0';
-    dsw_service   <= '0';
-    
+
     audio_left_o(15) <= not audio(15);
     audio_left_o(14 downto 0) <= signed(audio(14 downto 0));
     audio_right_o(15) <= not audio(15);
@@ -154,8 +155,8 @@ begin
     
     audio       => audio,
     
-    self_test  => dsw_self_test,
-    service    => dsw_service,
+    self_test  => not keyboard_n(m65_capslock),
+    service    => not keyboard_n(m65_s),
     coin1      => keyboard_n(m65_5),
     coin2      => keyboard_n(m65_6),
     start1     => keyboard_n(m65_1),
