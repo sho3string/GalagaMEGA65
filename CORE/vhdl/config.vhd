@@ -87,8 +87,10 @@ constant SCR_WELCOME : string :=
    "\n\n"                                    &
    "Credits  : Press '5' or '6'\n"           & 
    "Start    : Press '1' or '2' for player(s)\n" &
-   "Pause    : Press 'P'\n"              &
+   "Pause    : Press 'p'\n"              &
    "Controls : Joy 1 or a,d, up_arrow\n" &
+   "Svc 1    : Press 's' \n" &
+   "Svc Mode : Caps-Lock on\n" &
    "\n\n    Press Space to continue.\n\n\n"; 
    
 constant HELP_1 : string :=
@@ -311,7 +313,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal writ
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 34;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 25;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -323,36 +325,24 @@ constant OPTM_DY           : natural := 26;
 
 constant OPTM_ITEMS        : string :=
    " Galaga\n"              &
-   "\n"                     & 
-   " Item A.1\n"            &
-   " Item A.2\n"            &
-   " Item A.3\n"            &
-   " Item A.4\n"            &
+   " \n"                    &
+   " Pause Options\n"       &
+   " \n"                    &
+   " Pause when OSD open\n" &
+   " Dim Video after 10s\n" &
    "\n"                     &
-
-   " HDMI: %s\n"            &    -- HDMI submenu
-   " HDMI Settings\n"       &
+   " HDMI Mode\n"           &
    "\n"                     &
    " 720p 50 Hz 16:9\n"     &
    " 720p 60 Hz 16:9\n"     &
    " 576p 50 Hz 4:3\n"      &
    " 576p 50 Hz 5:4\n"      &
    "\n"                     &
-   " Back to main menu\n"   &
-
-   "\n"                     &
    " Digital Video Output\n"&
    "\n"                     &
-   " Rotate Screen 90    \n"&
-
+   " Rotate Screen 90\n"    &
    "\n"                     &
-   " Drives\n"              &
-   "\n"                     &
-   " Drive X:%s\n"          &
-   " Drive Y:%s\n"          &
-   " Drive Z:%s\n"          &
-   "\n"                     &
-   " Another Headline\n"    &
+   " Misc Settings\n"       &
    "\n"                     &
    " HDMI: CRT emulation\n" &
    " HDMI: Zoom-in\n"       &
@@ -365,15 +355,13 @@ constant OPTM_ITEMS        : string :=
 -- and be aware that you can only have a maximum of 254 groups (255 means "Close Menu");
 -- also make sure that your group numbers are monotonic increasing (e.g. 1, 2, 3, 4, ...)
 -- single-select items and therefore also drive mount items need to have unique identifiers
-constant OPTM_G_Demo_A     : integer := 1;
-constant OPTM_G_HDMI       : integer := 2;
-constant OPTM_G_Drive_X    : integer := 3;
-constant OPTM_G_Drive_Y    : integer := 4;
-constant OPTM_G_Drive_Z    : integer := 5;
-constant OPTM_G_CRT        : integer := 6;
-constant OPTM_G_Zoom       : integer := 7;
-constant OPTM_G_Audio      : integer := 8;
-constant OPTM_G_ROT90      : integer := 9;
+constant OPTM_G_OSDO       : integer := 1;
+constant OPTM_G_DIMV       : integer := 2;
+constant OPTM_G_HDMI       : integer := 3;
+constant OPTM_G_ROT90      : integer := 4;
+constant OPTM_G_CRT        : integer := 5;
+constant OPTM_G_Zoom       : integer := 6;
+constant OPTM_G_Audio      : integer := 7;
 
 -- !!! DO NOT TOUCH !!!
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC- 1;
@@ -383,40 +371,27 @@ type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC-
 -- make sure that you have exactly the same amount of entries here than in OPTM_ITEMS and defined by OPTM_SIZE
 constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Demo Headline A"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_Demo_A + OPTM_G_START,             -- Item A.1, cursor start position
-                                             OPTM_G_Demo_A + OPTM_G_STDSEL,            -- Item A.2, selected by default
-                                             OPTM_G_Demo_A,                            -- Item A.3
-                                             OPTM_G_Demo_A,                            -- Item A.4
+                                             OPTM_G_TEXT,                              -- Pause Options
                                              OPTM_G_LINE,                              -- Line
-
-                                             OPTM_G_SUBMENU,                           -- HDMI submenu block: START: "HDMI: %s"
-                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "HDMI Settings"
+                                             OPTM_G_OSDO + OPTM_G_SINGLESEL + OPTM_G_START,               -- Pause when OSD is open
+                                             OPTM_G_DIMV + OPTM_G_SINGLESEL,                              -- Dim video after 10s
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 50 Hz 16:9, selected by default
-                                             OPTM_G_HDMI,                              -- 720p 60 Hz 16:9
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "HDMI Mode""
+                                             OPTM_G_LINE,                              -- Line
+                                             OPTM_G_HDMI,                              -- 720p 50 Hz 16:9, selected by default
+                                             OPTM_G_HDMI + OPTM_G_STDSEL,              -- 720p 60 Hz 16:9
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 4:3
                                              OPTM_G_HDMI,                              -- 576p 50 Hz 5:4
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_CLOSE + OPTM_G_SUBMENU,            -- Close submenu / back to main menu
-                                                                                       -- HDMI submenu block: END
-
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Digital Video Output
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_ROT90 + OPTM_G_SINGLESEL + OPTM_G_STDSEL,          -- Rotate 90°
-
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Drives"
+                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Misc Settings"
                                              OPTM_G_LINE,                              -- Line
-                                             OPTM_G_Drive_X + OPTM_G_MOUNT_DRV,        -- Drive X
-                                             OPTM_G_Drive_Y + OPTM_G_MOUNT_DRV,        -- Drive Y
-                                             OPTM_G_Drive_Z + OPTM_G_MOUNT_DRV,        -- Drive Z
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_TEXT + OPTM_G_HEADLINE,            -- Headline "Another Headline"
-                                             OPTM_G_LINE,                              -- Line
-                                             OPTM_G_CRT     + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
-                                             OPTM_G_Zoom    + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
-                                             OPTM_G_Audio   + OPTM_G_SINGLESEL,        -- On/Off toggle ("Single Select")
+                                             OPTM_G_CRT  + OPTM_G_SINGLESEL,           -- On/Off toggle ("Single Select")
+                                             OPTM_G_Zoom + OPTM_G_SINGLESEL,           -- On/Off toggle ("Single Select")
+                                             OPTM_G_Audio+ OPTM_G_SINGLESEL,           -- On/Off toggle ("Single Select")
                                              OPTM_G_LINE,                              -- Line
                                              OPTM_G_CLOSE                              -- Close Menu
                                            );
