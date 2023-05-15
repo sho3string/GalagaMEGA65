@@ -188,9 +188,9 @@ constant C_MENU_HDMI_16_9_60  : natural := 10;
 constant C_MENU_HDMI_4_3_50   : natural := 11;
 constant C_MENU_HDMI_5_4_50   : natural := 12;
 constant C_MENU_ROT90         : natural := 16;
-constant C_MENU_CRT_EMULATION : natural := 26;
-constant C_MENU_HDMI_ZOOM     : natural := 27;
-constant C_MENU_IMPROVE_AUDIO : natural := 28;
+constant C_MENU_CRT_EMULATION : natural := 20;
+constant C_MENU_HDMI_ZOOM     : natural := 21;
+constant C_MENU_IMPROVE_AUDIO : natural := 22;
 
 
 -- Galaga specific video processing
@@ -221,12 +221,9 @@ begin
    main_rst_o   <= main_rst;
    video_clk_o  <= video_clk;
    video_rst_o  <= video_rst;
-   
-   main_video_hblank_o <= HBlank;
-   main_video_vblank_o <= VBlank;
   
-   
-    process (video_clk_o)
+  
+   process (video_clk_o)
         begin
         if rising_edge(video_clk_o) then
              div <= std_logic_vector(unsigned(div) + 1);
@@ -250,6 +247,10 @@ begin
              HBlank <= main_video_hblank;
              VBlank <= main_video_vblank;  
              
+             if ce_pix = '1' then
+                 main_video_hblank_o <= HBlank;
+                 main_video_vblank_o <= VBlank;
+             end if;
         end if;        
     end process;
     
@@ -325,7 +326,7 @@ begin
           
       ); -- i_main
 
-    -- screen rotate
+    -- screen rotate - WIP.
 
     i_screen_rotate : entity work.screen_rotate
     port map (
