@@ -187,14 +187,37 @@ signal rotate_ccw        : std_logic := flip_screen;
 ---------------------------------------------------------------------------------------------
 
 -- @TODO: Change all these democore menu items
+
+constant C_MENU_OSMPAUSE      : natural := 4;  -- counting from 0 from the very top of OPTM_ITEMS
 constant C_MENU_HDMI_16_9_50  : natural := 9;
 constant C_MENU_HDMI_16_9_60  : natural := 10;
 constant C_MENU_HDMI_4_3_50   : natural := 11;
 constant C_MENU_HDMI_5_4_50   : natural := 12;
 constant C_MENU_ROT90         : natural := 16;
-constant C_MENU_CRT_EMULATION : natural := 20;
-constant C_MENU_HDMI_ZOOM     : natural := 21;
-constant C_MENU_IMPROVE_AUDIO : natural := 22;
+
+-- Dipswitch B
+constant C_MENU_DSWB_0 : natural := 23;
+constant C_MENU_DSWB_1 : natural := 24;
+constant C_MENU_DSWB_2 : natural := 25;
+constant C_MENU_DSWB_3 : natural := 26;
+constant C_MENU_DSWB_4 : natural := 27;
+constant C_MENU_DSWB_5 : natural := 28;
+constant C_MENU_DSWB_6 : natural := 29;
+constant C_MENU_DSWB_7 : natural := 30;
+
+-- Dipswitch A
+constant C_MENU_DSWA_0 : natural := 37;
+constant C_MENU_DSWA_1 : natural := 38;
+constant C_MENU_DSWA_2 : natural := 39;
+constant C_MENU_DSWA_3 : natural := 40;
+constant C_MENU_DSWA_4 : natural := 41;
+constant C_MENU_DSWA_5 : natural := 42;
+constant C_MENU_DSWA_6 : natural := 43;
+constant C_MENU_DSWA_7 : natural := 44;
+
+-- Misc Options
+constant C_MENU_CRT_EMULATION : natural := 50;
+constant C_MENU_IMPROVE_AUDIO : natural := 51;
 
 
 -- Galaga specific video processing
@@ -284,10 +307,9 @@ begin
          clk_main_i           => main_clk,
          reset_soft_i         => main_reset_core_i,
          reset_hard_i         => main_reset_m2m_i,
-         pause_i              => main_pause_core_i,
-
+         pause_i              => main_pause_core_i and main_osm_control_i(C_MENU_OSMPAUSE),
          clk_main_speed_i     => CORE_CLK_SPEED,
-
+       
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
          video_ce_o           => open,
@@ -325,8 +347,27 @@ begin
          pot1_x_i             => main_pot1_x_i,
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
-         pot2_y_i             => main_pot2_y_i
+         pot2_y_i             => main_pot2_y_i,
+         
+         dsw_a_i => main_osm_control_i(C_MENU_DSWA_7) &
+                    main_osm_control_i(C_MENU_DSWA_6) &
+                    main_osm_control_i(C_MENU_DSWA_5) &
+                    main_osm_control_i(C_MENU_DSWA_4) &
+                    main_osm_control_i(C_MENU_DSWA_3) &
+                    main_osm_control_i(C_MENU_DSWA_2) &
+                    main_osm_control_i(C_MENU_DSWA_1) &
+                    main_osm_control_i(C_MENU_DSWA_0),
           
+          
+         dsw_b_i => main_osm_control_i(C_MENU_DSWB_7) &
+                    main_osm_control_i(C_MENU_DSWB_6) &
+                    main_osm_control_i(C_MENU_DSWB_5) &
+                    main_osm_control_i(C_MENU_DSWB_4) &
+                    main_osm_control_i(C_MENU_DSWB_3) &
+                    main_osm_control_i(C_MENU_DSWB_2) &
+                    main_osm_control_i(C_MENU_DSWB_1) &
+                    main_osm_control_i(C_MENU_DSWB_0)
+                 
       ); -- i_main
 
     -- screen rotate
@@ -414,7 +455,6 @@ begin
    qnice_scandoubler_o        <= '1';                                         -- no scandoubler
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
-   qnice_zoom_crop_o          <= qnice_osm_control_i(C_MENU_HDMI_ZOOM);       -- 0 = no zoom/crop
 
    -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour

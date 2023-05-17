@@ -63,14 +63,20 @@ entity main is
       pot1_x_i                : in  std_logic_vector(7 downto 0);
       pot1_y_i                : in  std_logic_vector(7 downto 0);
       pot2_x_i                : in  std_logic_vector(7 downto 0);
-      pot2_y_i                : in  std_logic_vector(7 downto 0)
+      pot2_y_i                : in  std_logic_vector(7 downto 0);
+      
+       -- Dipswitches
+      dsw_a_i                 : in std_logic_vector(7 downto 0);
+      dsw_b_i                 : in std_logic_vector(7 downto 0)
+      
+      
    );
 end entity main;
 
 architecture synthesis of main is
 
 signal keyboard_n        : std_logic_vector(79 downto 0);
-signal pause_cpu         : std_logic; -- to do later
+signal pause_cpu         : std_logic;
 signal status            : signed(31 downto 0);
 signal flip_screen       : std_logic := status(8);
 signal flip              : std_logic := '0';
@@ -82,14 +88,6 @@ signal no_rotate         : std_logic := status(2) OR direct_video;
 signal gamma_bus         : std_logic_vector(21 downto 0);
 signal audio             : std_logic_vector(15 downto 0);
 
--- dipswitches
---type dsw_type is array (0 to 3) of std_logic_vector(7 downto 0); -- each dipswitch is 8 bits wide.
---signal dsw : dsw_type ; 
-
-signal dsw_a : std_logic_vector(7 downto 0);
-signal dsw_b : std_logic_vector(7 downto 0);
-
--- inputs
 
 -- I/O board button press simulation ( active high )
 -- b[1]: user button
@@ -122,20 +120,16 @@ constant m65_up_crsr       : integer := 73; --Player fire
 constant m65_p             : integer := 41; --Pause button
 constant m65_s             : integer := 13; --Service 1
 constant m65_capslock      : integer := 72; --Service Mode
-
+constant m65_help          : integer := 67; --Help key
 
 
 begin
    
-    -- need to connect DIPs to menu items but for now we will set them all to OFF position
-    dsw_a <= (others => '0');
-    dsw_b <= (others => '0');
 
     audio_left_o(15) <= not audio(15);
     audio_left_o(14 downto 0) <= signed(audio(14 downto 0));
     audio_right_o(15) <= not audio(15);
     audio_right_o(14 downto 0) <= signed(audio(14 downto 0));
-   
 
     i_galaga : entity work.galaga
     port map (
@@ -171,11 +165,14 @@ begin
     left2      => not joy_2_left_n_i,
     right2     => not joy_2_right_n_i,
     fire2      => not joy_2_fire_n_i,
-    dip_switch_a    => not dsw_a,
-    dip_switch_b    => not dsw_b,
+    flip_screen => flip_screen,
+    
+    -- dip a and b are labelled back to front in MiSTer core.
+    dip_switch_a    => not dsw_b_i,
+    dip_switch_b    => not dsw_a_i,
     h_offset   => status(27 downto 24),
     v_offset   => status(31 downto 28),
-    pause      => pause_cpu,
+    pause      => pause_cpu or pause_i,
    
     hs_address => hs_address,
     hs_data_out => hs_data_out,
