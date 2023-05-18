@@ -80,17 +80,17 @@ port (
    main_pause_core_i       : in  std_logic;
 
    -- Video output
-   main_video_ce_o         : out std_logic;
-   main_video_ce_ovl_o     : out std_logic;
-   main_video_retro15kHz_o : out std_logic;
-   main_video_red_o        : out std_logic_vector(7 downto 0);
-   main_video_green_o      : out std_logic_vector(7 downto 0);
-   main_video_blue_o       : out std_logic_vector(7 downto 0);
-   main_video_vs_o         : out std_logic;
-   main_video_hs_o         : out std_logic;
-   main_video_hblank_o     : out std_logic;
-   main_video_vblank_o     : out std_logic;
-   main_video_de_o         : out std_logic;
+   video_ce_o              : out std_logic;
+   video_ce_ovl_o          : out std_logic;
+   video_retro15kHz_o      : out std_logic;
+   video_red_o             : out std_logic_vector(7 downto 0);
+   video_green_o           : out std_logic_vector(7 downto 0);
+   video_blue_o            : out std_logic_vector(7 downto 0);
+   video_vs_o              : out std_logic;
+   video_hs_o              : out std_logic;
+   video_hblank_o          : out std_logic;
+   video_vblank_o          : out std_logic;
+   video_de_o              : out std_logic;
   
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
@@ -274,8 +274,8 @@ begin
              VBlank <= main_video_vblank;  
              
              if ce_pix = '1' then
-                 main_video_hblank_o <= HBlank;
-                 main_video_vblank_o <= VBlank;
+                 video_hblank_o <= HBlank;
+                 video_vblank_o <= VBlank;
              end if;
         end if;        
     end process;
@@ -291,8 +291,8 @@ begin
    --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
    -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-   main_video_ce_ovl_o     <= '1';
-   main_video_retro15kHz_o <= '0';
+   video_ce_ovl_o     <= '1';
+   video_retro15kHz_o <= '0';
 
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -377,13 +377,13 @@ begin
   
     --inputs
     CLK_VIDEO  => video_clk,
-    CE_PIXEL   => main_video_ce_o,
-    VGA_R      => main_video_red_o,
-    VGA_G      => main_video_green_o,
-    VGA_B      => main_video_blue_o,
-    VGA_HS     => main_video_hs_o,
-    VGA_VS     => main_video_vs_o,
-    VGA_DE     => main_video_de_o,
+    CE_PIXEL   => video_ce_o,
+    VGA_R      => video_red_o,
+    VGA_G      => video_green_o,
+    VGA_B      => video_blue_o,
+    VGA_HS     => video_hs_o,
+    VGA_VS     => video_vs_o,
+    VGA_DE     => video_de_o,
     rotate_ccw => rotate_ccw,
     no_rotate  => no_rotate,
     flip       => flip,
@@ -420,13 +420,13 @@ begin
         HSync               => HSync,
         VSync               => VSync,
         CLK_VIDEO_o         => video_clk_o,            
-        CE_PIXEL            => main_video_ce_o,
-        VGA_R               => main_video_red_o,
-        VGA_G               => main_video_green_o,
-        VGA_B               => main_video_blue_o,
-        VGA_HS              => main_video_hs_o,
-        VGA_VS              => main_video_vs_o,
-        VGA_DE              => main_video_de_o,
+        CE_PIXEL            => video_ce_o,
+        VGA_R               => video_red_o,
+        VGA_G               => video_green_o,
+        VGA_B               => video_blue_o,
+        VGA_HS              => video_hs_o,
+        VGA_VS              => video_vs_o,
+        VGA_DE              => video_de_o,
         VGA_SL              => open,                  -- @TODO: need to handle later
         fx                  => status(5 downto 3),
         forced_scandoubler  => forced_scandoubler,
