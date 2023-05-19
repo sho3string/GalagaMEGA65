@@ -783,6 +783,7 @@
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2019"/>
         <Step Id="synth_design" PreStepTclHook="$PPRDIR/m2m-rom/synth_pre.tcl">
+          <Option Id="MoreOptsStr"><![CDATA[-verilog_define PAUSE_OUTPUT_DIM=1]]></Option>
           <Option Id="FlattenHierarchy">1</Option>
         </Step>
       </Strategy>
