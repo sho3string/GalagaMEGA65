@@ -22,6 +22,7 @@ entity main is
       reset_soft_i            : in  std_logic;
       reset_hard_i            : in  std_logic;
       pause_i                 : in  std_logic;
+      dim_video_o             : out std_logic;
 
       -- MiSTer core main clock speed:
       -- Make sure you pass very exact numbers here, because they are used for avoiding clock drift at derived clocks
@@ -67,8 +68,9 @@ entity main is
       
        -- Dipswitches
       dsw_a_i                 : in std_logic_vector(7 downto 0);
-      dsw_b_i                 : in std_logic_vector(7 downto 0)
+      dsw_b_i                 : in std_logic_vector(7 downto 0);
       
+      osm_control_i      : in  std_logic_vector(255 downto 0)
       
    );
 end entity main;
@@ -102,8 +104,12 @@ signal hs_address       : std_logic_vector(15 downto 0);
 signal hs_data_in       : std_logic_vector(7 downto 0);
 signal hs_data_out      : std_logic_vector(7 downto 0);
 signal hs_write_enable  : std_logic;
-
 signal hs_pause         : std_logic;
+signal options          : std_logic_vector(1 downto 0);
+
+
+constant C_MENU_OSMPAUSE     : natural := 4;
+constant C_MENU_OSMDIM       : natural := 5;
 
 -- Game player inputs
 constant m65_1             : integer := 56; --Player 1 Start
@@ -130,6 +136,9 @@ begin
     audio_left_o(14 downto 0) <= signed(audio(14 downto 0));
     audio_right_o(15) <= not audio(15);
     audio_right_o(14 downto 0) <= signed(audio(14 downto 0));
+   
+    options(0) <= keyboard_n(m65_p);
+    options(1) <= osm_control_i(C_MENU_OSMDIM);
 
     i_galaga : entity work.galaga
     port map (
@@ -200,13 +209,15 @@ begin
          reset          => reset,
          user_button    => keyboard_n(m65_p),
          pause_request  => hs_pause,
-         options        => ('0','1'), -- not status(11 downto 10), - TODO, hookup to OSD.
+         options        => options,  -- not status(11 downto 10), - TODO, hookup to OSD.
          OSD_STATUS     => '0',       -- disabled for now - TODO, to OSD
          r              => video_red_o,
          g              => video_green_o,
          b              => video_blue_o,
-         pause_cpu      => pause_cpu
+         pause_cpu      => pause_cpu,
+         dim_video      => dim_video_o
          --rgb_out        TODO
+         
       );
       
    -- @TODO: Keyboard mapping and keyboard behavior

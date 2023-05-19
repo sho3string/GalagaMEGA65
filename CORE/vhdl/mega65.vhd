@@ -188,7 +188,8 @@ signal rotate_ccw        : std_logic := flip_screen;
 
 -- @TODO: Change all these democore menu items
 
-constant C_MENU_OSMPAUSE      : natural := 4;  -- counting from 0 from the very top of OPTM_ITEMS
+constant C_MENU_OSMPAUSE      : natural := 4;  
+constant C_MENU_OSMDIM        : natural := 5;
 constant C_MENU_HDMI_16_9_50  : natural := 9;
 constant C_MENU_HDMI_16_9_60  : natural := 10;
 constant C_MENU_HDMI_4_3_50   : natural := 11;
@@ -308,8 +309,9 @@ begin
          reset_soft_i         => main_reset_core_i,
          reset_hard_i         => main_reset_m2m_i,
          pause_i              => main_pause_core_i and main_osm_control_i(C_MENU_OSMPAUSE),
+         dim_video_o          => dim_video,
          clk_main_speed_i     => CORE_CLK_SPEED,
-       
+         
          -- Video output
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
          video_ce_o           => open,
@@ -348,6 +350,8 @@ begin
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
          pot2_y_i             => main_pot2_y_i,
+         
+         osm_control_i        => main_osm_control_i,
          
          dsw_a_i => main_osm_control_i(C_MENU_DSWA_7) &
                     main_osm_control_i(C_MENU_DSWA_6) &
