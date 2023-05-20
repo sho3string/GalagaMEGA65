@@ -250,51 +250,6 @@ begin
    video_clk_o  <= video_clk;
    video_rst_o  <= video_rst;
   
-   process (video_clk_o)
-        begin
-        if rising_edge(video_clk_o) then
-             div <= std_logic_vector(unsigned(div) + 1);
-             
-             if div="000" then
-                ce_pix <= '1';
-                else
-                ce_pix <= '0';
-             end if;
-    
-             if dim_video = '1' then
-                rgb_out <=   std_logic_vector(resize(unsigned(main_video_red) srl 1, 3)) & 
-                             std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) & 
-                             std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
-             else
-                rgb_out <=   std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
-             end if;    
-            
-             HSync <= not main_video_hs;
-             VSync <= not main_video_vs;
-             HBlank <= main_video_hblank;
-             VBlank <= main_video_vblank;  
-             
-             if ce_pix = '1' then
-                 video_hblank_o <= HBlank;
-                 video_vblank_o <= VBlank;
-             end if;
-        end if;        
-    end process;
-    
-   -- @This here remains a rather complicated TODO. sy2002 and/or MJoergen will support
-   -- OLD COMMENT TAKEN FROM ANOTHER FILE, DOES NOT FULLY FIT HERE:
-   -- On video_ce_o and video_ce_ovl_o: You have an important @TODO when porting a core:
-   -- video_ce_o: You need to make sure that video_ce_o divides clk_main_i such that it transforms clk_main_i
-   --             into the pixelclock of the core (means: the core's native output resolution pre-scandoubler)
-   -- video_ce_ovl_o: Clock enable for the OSM overlay and for sampling the core's (retro) output in a way that
-   --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
-   --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
-   --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
-   -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
-   --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-   video_ce_ovl_o     <= '1';
-   video_retro15kHz_o <= '0';
-
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
@@ -374,70 +329,112 @@ begin
                  
       ); -- i_main
 
-    -- screen rotate
+    process (video_clk)
+    begin
+        if rising_edge(video_clk) then
+            div <= std_logic_vector(unsigned(div) + 1);
+            if div="000" then
+                ce_pix <= '1';
+            else
+                ce_pix <= '0';
+            end if;
 
-    i_screen_rotate : entity work.screen_rotate
-    port map (
-  
-    --inputs
-    CLK_VIDEO  => video_clk,
-    CE_PIXEL   => video_ce_o,
-    VGA_R      => video_red_o,
-    VGA_G      => video_green_o,
-    VGA_B      => video_blue_o,
-    VGA_HS     => video_hs_o,
-    VGA_VS     => video_vs_o,
-    VGA_DE     => video_de_o,
-    rotate_ccw => rotate_ccw,
-    no_rotate  => no_rotate,
-    flip       => flip,
-    FB_VBL     => '0',
-    FB_LL      => '0',
-    DDRAM_BUSY => '0', -- set this to 0 for now
-    -- outputs
-    video_rotated => video_rotated
-    --FB_EN        => FB_EN,
-    
-    --FB_FORMAT    => FB_FORMAT,
-    --FB_WIDTH     => FB_WIDTH,
-    --FB_HEIGHT    => FB_HEIGHT,
-    --FB_BASE      => FB_BASE,     
-    --FB_STRIDE    => FB_STRIDE
-   
-  );
+            if dim_video = '1' then
+                rgb_out <= std_logic_vector(resize(unsigned(main_video_red) srl 1, 3)) &
+                           std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) &
+                           std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
+            else
+                rgb_out <= std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
+            end if;
+
+            HSync  <= not main_video_hs;
+            VSync  <= not main_video_vs;
+            HBlank <= main_video_hblank;
+            VBlank <= main_video_vblank;
+
+            if ce_pix = '1' then
+                video_hblank_o <= HBlank;
+                video_vblank_o <= VBlank;
+            end if;
+        end if;
+    end process;
+
+    -- @This here remains a rather complicated TODO. sy2002 and/or MJoergen will support
+    -- OLD COMMENT TAKEN FROM ANOTHER FILE, DOES NOT FULLY FIT HERE:
+    -- On video_ce_o and video_ce_ovl_o: You have an important @TODO when porting a core:
+    -- video_ce_o: You need to make sure that video_ce_o divides clk_main_i such that it transforms clk_main_i
+    --             into the pixelclock of the core (means: the core's native output resolution pre-scandoubler)
+    -- video_ce_ovl_o: Clock enable for the OSM overlay and for sampling the core's (retro) output in a way that
+    --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
+    --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
+    --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
+    -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
+    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
+    video_ce_ovl_o     <= '1';
+    video_retro15kHz_o <= '0';
 
     --arcade video
 
     i_arcade_video : entity work.arcade_video
-        generic map (
-        
-            WIDTH => 288,   -- screen width in pixels ( ROT90 )
-            DW    => 8,     -- each character is 8 pixels x 8 pixels
-            GAMMA => 0      -- @TODO: Deactivated to start with; we might need to reactivate later
-        )         
-     port map (
-        clk_video_i         => video_clk,             -- video clock 48 MHz
-        ce_pix              => ce_pix,
-        RGB_in              => rgb_out,
-        HBlank              => HBlank,
-        VBlank              => VBlank,
-        HSync               => HSync,
-        VSync               => VSync,
-        CLK_VIDEO_o         => video_clk_o,            
-        CE_PIXEL            => video_ce_o,
-        VGA_R               => video_red_o,
-        VGA_G               => video_green_o,
-        VGA_B               => video_blue_o,
-        VGA_HS              => video_hs_o,
-        VGA_VS              => video_vs_o,
-        VGA_DE              => video_de_o,
-        VGA_SL              => open,                  -- @TODO: need to handle later
-        fx                  => status(5 downto 3),
-        forced_scandoubler  => forced_scandoubler,
-        gamma_bus           => gamma_bus
-        
-     );
-       ---------------------------------------------------------------------------------------------
+    generic map (
+        WIDTH => 288,   -- screen width in pixels ( ROT90 )
+        DW    => 8,     -- each character is 8 pixels x 8 pixels
+        GAMMA => 0      -- @TODO: Deactivated to start with; we might need to reactivate later
+    )
+    port map (
+        clk_video_i        => video_clk,             -- video clock 48 MHz
+        ce_pix             => ce_pix,
+        RGB_in             => rgb_out,
+        HBlank             => HBlank,
+        VBlank             => VBlank,
+        HSync              => HSync,
+        VSync              => VSync,
+        CLK_VIDEO_o        => video_clk_o,
+        CE_PIXEL           => video_ce_o,
+        VGA_R              => video_red_o,
+        VGA_G              => video_green_o,
+        VGA_B              => video_blue_o,
+        VGA_HS             => video_hs_o,
+        VGA_VS             => video_vs_o,
+        VGA_DE             => video_de_o,
+        VGA_SL             => open,                  -- @TODO: need to handle later
+        fx                 => status(5 downto 3),
+        forced_scandoubler => forced_scandoubler,
+        gamma_bus          => gamma_bus
+    ); -- i_arcade_video
+
+    -- screen rotate
+
+    i_screen_rotate : entity work.screen_rotate
+        port map (
+
+        --inputs
+        CLK_VIDEO  => video_clk,
+        CE_PIXEL   => video_ce_o,
+        VGA_R      => video_red_o,
+        VGA_G      => video_green_o,
+        VGA_B      => video_blue_o,
+        VGA_HS     => video_hs_o,
+        VGA_VS     => video_vs_o,
+        VGA_DE     => video_de_o,
+        rotate_ccw => rotate_ccw,
+        no_rotate  => no_rotate,
+        flip       => flip,
+        FB_VBL     => '0',
+        FB_LL      => '0',
+        DDRAM_BUSY => '0', -- set this to 0 for now
+        -- outputs
+        video_rotated => video_rotated
+        --FB_EN        => FB_EN,
+
+        --FB_FORMAT    => FB_FORMAT,
+        --FB_WIDTH     => FB_WIDTH,
+        --FB_HEIGHT    => FB_HEIGHT,
+        --FB_BASE      => FB_BASE,
+        --FB_STRIDE    => FB_STRIDE
+    ); -- i_screen_rotate
+
+   ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
 
