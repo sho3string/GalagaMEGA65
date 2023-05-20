@@ -197,28 +197,28 @@ constant C_MENU_HDMI_5_4_50   : natural := 12;
 constant C_MENU_ROT90         : natural := 16;
 
 -- Dipswitch B
-constant C_MENU_DSWB_0 : natural := 23;
-constant C_MENU_DSWB_1 : natural := 24;
-constant C_MENU_DSWB_2 : natural := 25;
-constant C_MENU_DSWB_3 : natural := 26;
-constant C_MENU_DSWB_4 : natural := 27;
-constant C_MENU_DSWB_5 : natural := 28;
-constant C_MENU_DSWB_6 : natural := 29;
-constant C_MENU_DSWB_7 : natural := 30;
+constant C_MENU_DSWB_0 : natural := 19;
+constant C_MENU_DSWB_1 : natural := 20;
+constant C_MENU_DSWB_2 : natural := 21;
+constant C_MENU_DSWB_3 : natural := 22;
+constant C_MENU_DSWB_4 : natural := 23;
+constant C_MENU_DSWB_5 : natural := 24;
+constant C_MENU_DSWB_6 : natural := 25;
+constant C_MENU_DSWB_7 : natural := 26;
 
 -- Dipswitch A
-constant C_MENU_DSWA_0 : natural := 37;
-constant C_MENU_DSWA_1 : natural := 38;
-constant C_MENU_DSWA_2 : natural := 39;
-constant C_MENU_DSWA_3 : natural := 40;
-constant C_MENU_DSWA_4 : natural := 41;
-constant C_MENU_DSWA_5 : natural := 42;
-constant C_MENU_DSWA_6 : natural := 43;
-constant C_MENU_DSWA_7 : natural := 44;
+constant C_MENU_DSWA_0 : natural := 28;
+constant C_MENU_DSWA_1 : natural := 29;
+constant C_MENU_DSWA_2 : natural := 30;
+constant C_MENU_DSWA_3 : natural := 31;
+constant C_MENU_DSWA_4 : natural := 32;
+constant C_MENU_DSWA_5 : natural := 33;
+constant C_MENU_DSWA_6 : natural := 34;
+constant C_MENU_DSWA_7 : natural := 35;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 50;
-constant C_MENU_IMPROVE_AUDIO : natural := 51;
+constant C_MENU_CRT_EMULATION : natural := 41;
+constant C_MENU_IMPROVE_AUDIO : natural := 42;
 
 
 -- Galaga specific video processing

@@ -91,7 +91,7 @@ constant SCR_WELCOME : string :=
    "Controls : Joy 1 or a,d, up_arrow\n" &
    "Svc 1    : Press 's' \n" &
    "Svc Mode : Caps-Lock on\n" &
-   "\n\n    Press Space to continue.\n\n\n"; 
+   "\n\n    Press Space to continue.\n"; 
    
 constant HELP_1 : string :=
 
@@ -313,7 +313,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal writ
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 50;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 45;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -321,7 +321,7 @@ constant OPTM_SIZE         : natural := 50;  -- amount of items including empty 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
 -- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
 constant OPTM_DX           : natural := 23;
-constant OPTM_DY           : natural := 26;
+constant OPTM_DY           : natural := 24;
 
 constant OPTM_ITEMS        : string :=
    " Galaga\n"              &
@@ -340,8 +340,8 @@ constant OPTM_ITEMS        : string :=
    "\n"                     &
    " Game Setup\n"          &
    "\n"                     &
-   " Dip Switch B\n"        &
-   " DSWB\n"                &
+   " Dip Switch A & B\n"    &
+   " DSW A & B\n"           &
    "\n"                     &
    " 0 - 2 Credits Game\n"  &
    " 1 - Difficulty A\n"    &
@@ -351,11 +351,6 @@ constant OPTM_ITEMS        : string :=
    " 5 - Rack Test\n"       &
    " 6 - Unused\n"          &
    " 7 - Cabinet Type\n"    &
-   "\n"                     &
-   " Back to main menu\n"   &
-   "\n"                     &
-   " Dip Switch A\n"        &
-   " DSWA\n"                &
    "\n"                     &
    " 0 - Coinage A\n"       &
    " 1 - Coinage B\n"       &
@@ -438,11 +433,6 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_DSWB5  + OPTM_G_SINGLESEL,                          -- Rack Test
                                              OPTM_G_DSWB6  + OPTM_G_SINGLESEL,                          -- Unused
                                              OPTM_G_DSWB7  + OPTM_G_SINGLESEL,                          -- Cabinet
-                                             OPTM_G_LINE,                                               -- Line
-                                             OPTM_G_CLOSE + OPTM_G_SUBMENU,                             -- Close submenu / back to main menu
-                                             OPTM_G_LINE,                                               -- Line
-                                             OPTM_G_SUBMENU,                                            -- Dipswitch A Submenu start
-                                             OPTM_G_TEXT + OPTM_G_HEADLINE,                             -- Dipswitch A Title
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_DSWA0  + OPTM_G_SINGLESEL,                          -- Coinage A \
                                              OPTM_G_DSWA1  + OPTM_G_SINGLESEL,                          -- Coinage B  |
