@@ -222,9 +222,6 @@ constant C_MENU_IMPROVE_AUDIO : natural := 51;
 
 
 -- Galaga specific video processing
-signal HSync,VSync,HBlank,VBlank : std_logic;
-signal rgb_out                   : std_logic_vector(7 downto 0);
-signal ce_pix                    : std_logic;
 signal div                       : std_logic_vector(2 downto 0);
 signal dim_video                 : std_logic;
 
@@ -332,30 +329,31 @@ begin
     process (video_clk)
     begin
         if rising_edge(video_clk) then
+            video_ce_o     <= '0';
+            video_ce_ovl_o <= '0';
+
             div <= std_logic_vector(unsigned(div) + 1);
             if div="000" then
-                ce_pix <= '1';
-            else
-                ce_pix <= '0';
+               video_ce_o <= '1';
+            end if;
+            if div(0) = '1' then
+               video_ce_ovl_o <= '1';
             end if;
 
             if dim_video = '1' then
-                rgb_out <= std_logic_vector(resize(unsigned(main_video_red) srl 1, 3)) &
-                           std_logic_vector(resize(unsigned(main_video_green) srl 1, 3)) &
-                           std_logic_vector(resize(unsigned(main_video_blue) srl 1, 2));
+                video_red_o   <= "0" & main_video_red   & main_video_red   & main_video_red(2 downto 2);
+                video_green_o <= "0" & main_video_green & main_video_green & main_video_green(2 downto 2);
+                video_blue_o  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);
             else
-                rgb_out <= std_logic_vector(main_video_red) & std_logic_vector(main_video_green) & std_logic_vector(main_video_blue);
+                video_red_o   <= main_video_red   & main_video_red   & main_video_red(2 downto 1);
+                video_green_o <= main_video_green & main_video_green & main_video_green(2 downto 1);
+                video_blue_o  <= main_video_blue  & main_video_blue  & main_video_blue & main_video_blue;
             end if;
 
-            HSync  <= not main_video_hs;
-            VSync  <= not main_video_vs;
-            HBlank <= main_video_hblank;
-            VBlank <= main_video_vblank;
-
-            if ce_pix = '1' then
-                video_hblank_o <= HBlank;
-                video_vblank_o <= VBlank;
-            end if;
+            video_hs_o     <= not main_video_hs;
+            video_vs_o     <= main_video_vs;
+            video_hblank_o <= main_video_hblank;
+            video_vblank_o <= main_video_vblank;
         end if;
     end process;
 
@@ -370,38 +368,7 @@ begin
     --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
     -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
     --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-    video_ce_ovl_o     <= '1';
     video_retro15kHz_o <= '0';
-
-    --arcade video
-
-    i_arcade_video : entity work.arcade_video
-    generic map (
-        WIDTH => 288,   -- screen width in pixels ( ROT90 )
-        DW    => 8,     -- each character is 8 pixels x 8 pixels
-        GAMMA => 0      -- @TODO: Deactivated to start with; we might need to reactivate later
-    )
-    port map (
-        clk_video_i        => video_clk,             -- video clock 48 MHz
-        ce_pix             => ce_pix,
-        RGB_in             => rgb_out,
-        HBlank             => HBlank,
-        VBlank             => VBlank,
-        HSync              => HSync,
-        VSync              => VSync,
-        CLK_VIDEO_o        => video_clk_o,
-        CE_PIXEL           => video_ce_o,
-        VGA_R              => video_red_o,
-        VGA_G              => video_green_o,
-        VGA_B              => video_blue_o,
-        VGA_HS             => video_hs_o,
-        VGA_VS             => video_vs_o,
-        VGA_DE             => video_de_o,
-        VGA_SL             => open,                  -- @TODO: need to handle later
-        fx                 => status(5 downto 3),
-        forced_scandoubler => forced_scandoubler,
-        gamma_bus          => gamma_bus
-    ); -- i_arcade_video
 
     -- screen rotate
 
