@@ -104,9 +104,10 @@ signal hs_address       : std_logic_vector(15 downto 0);
 signal hs_data_in       : std_logic_vector(7 downto 0);
 signal hs_data_out      : std_logic_vector(7 downto 0);
 signal hs_write_enable  : std_logic;
+
 signal hs_pause         : std_logic;
 signal options          : std_logic_vector(1 downto 0);
-
+signal self_test        : std_logic;
 
 constant C_MENU_OSMPAUSE     : natural := 4;
 constant C_MENU_OSMDIM       : natural := 5;
@@ -131,14 +132,26 @@ constant m65_help          : integer := 67; --Help key
 
 begin
    
-
     audio_left_o(15) <= not audio(15);
     audio_left_o(14 downto 0) <= signed(audio(14 downto 0));
     audio_right_o(15) <= not audio(15);
     audio_right_o(14 downto 0) <= signed(audio(14 downto 0));
    
-    options(0) <= keyboard_n(m65_p);
+    options(0) <= osm_control_i(C_MENU_OSMPAUSE);
     options(1) <= osm_control_i(C_MENU_OSMDIM);
+    
+    -- if pause_cpu is not asserted, it's safe to enter the service/test mode.
+    -- this prevents undesired state of the game when pause_cpu is asserted whilst self_test is enabled.
+    
+    process (clk_main_i)
+        begin
+        if rising_edge(clk_main_i) then
+            if  not pause_cpu then 
+                    self_test <= '1' when not keyboard_n(m65_capslock) else '0';
+            end if;
+  
+        end if;
+    end process;
 
     i_galaga : entity work.galaga
     port map (
@@ -158,17 +171,18 @@ begin
     
     audio       => audio,
     
-    self_test  => not keyboard_n(m65_capslock),
+    self_test  => self_test,
     service    => not keyboard_n(m65_s),
-    coin1      => keyboard_n(m65_5),
-    coin2      => keyboard_n(m65_6),
-    start1     => keyboard_n(m65_1),
-    start2     => keyboard_n(m65_2),
+    coin1      => not keyboard_n(m65_5),
+    coin2      => not keyboard_n(m65_6),
+    start1     => not keyboard_n(m65_1),
+    start2     => not keyboard_n(m65_2),
     up1        => not joy_1_up_n_i,
     down1      => not joy_1_down_n_i,
     left1      => not joy_1_left_n_i or not keyboard_n(m65_a),
     right1     => not joy_1_right_n_i or not keyboard_n(m65_d),
     fire1      => not joy_1_fire_n_i or not keyboard_n(m65_up_crsr),
+    -- player 2 joystick is only active in cocktail/table mode.
     up2        => not joy_2_up_n_i,
     down2      => not joy_2_down_n_i,
     left2      => not joy_2_left_n_i,
