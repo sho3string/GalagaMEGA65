@@ -82,15 +82,15 @@ constant SCR_WELCOME : string :=
    "MiSTer port done by Muse in 2023\n\n" &
 
    -- We are not insisting. But it would be nice if you gave us credit for MiSTer2MEGA65 by leaving these lines in
-   "Powered by MiSTer2MEGA65 Version [\n" &
-   "Done by sy2002 and MJoergen in 202\n" &
-   "\n\n"                                    &
-   "Credits  : Press '5' or '6'\n"           & 
-   "Start    : Press '1' or '2' for pl\n" &
-   "Pause    : Press 'p'\n"              &
-   "Controls : Joy 1 or a,d, up_arrow\n" &
-   "Svc 1    : Press 's' \n" &
-   "Svc Mode : Caps-Lock on\n" &
+   "Powered by MiSTer2MEGA65 Ver [WIP]\n" &
+   "By sy2002 and MJoergen in 2022\n"     &
+   "\n\n"                                 &
+   "Credits  : Press '5' or '6'\n"        & 
+   "Start    : Press '1' or '2'\n"        &
+   "Pause    : Press 'p'\n"               &
+   "Controls : Joy 1 or a,d, up_arrow\n"  &
+   "Svc 1    : Press 's' \n"              &
+   "Svc Mode : Caps-Lock on\n"            &
    "\n\n    Press Space to continue.\n"; 
    
 constant HELP_1 : string :=
