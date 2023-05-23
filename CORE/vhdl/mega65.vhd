@@ -48,6 +48,7 @@ port (
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
+   qnice_retro15kHz_o      : out std_logic;
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
