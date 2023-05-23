@@ -13,6 +13,7 @@ use ieee.numeric_std.all;
 library work;
 use work.globals.all;
 use work.types_pkg.all;
+use work.video_modes_pkg.all;
 
 library xpm;
 use xpm.vcomponents.all;
@@ -226,6 +227,52 @@ constant C_FLIP_JOYS          : natural := 43;
 signal div                       : std_logic_vector(2 downto 0);
 signal dim_video                 : std_logic;
 
+signal video_ce     : std_logic;
+signal video_red    : std_logic_vector(7 downto 0);
+signal video_green  : std_logic_vector(7 downto 0);
+signal video_blue   : std_logic_vector(7 downto 0);
+signal video_vs     : std_logic;
+signal video_hs     : std_logic;
+signal video_vblank : std_logic;
+signal video_hblank : std_logic;
+signal video_de     : std_logic;
+
+-- Output from screen_rotate
+signal ddram_addr : std_logic_vector(28 downto 0);
+signal ddram_data : std_logic_vector(63 downto 0);
+signal ddram_be   : std_logic_vector( 7 downto 0);
+signal ddram_we   : std_logic;
+
+attribute mark_debug : string;
+attribute mark_debug of main_video_red    : signal is "true";
+attribute mark_debug of main_video_green  : signal is "true";
+attribute mark_debug of main_video_blue   : signal is "true";
+attribute mark_debug of main_video_vs     : signal is "true";
+attribute mark_debug of main_video_hs     : signal is "true";
+attribute mark_debug of main_video_hblank : signal is "true";
+attribute mark_debug of main_video_vblank : signal is "true";
+attribute mark_debug of video_ce          : signal is "true";
+attribute mark_debug of video_red         : signal is "true";
+attribute mark_debug of video_green       : signal is "true";
+attribute mark_debug of video_blue        : signal is "true";
+attribute mark_debug of video_vs          : signal is "true";
+attribute mark_debug of video_hs          : signal is "true";
+attribute mark_debug of video_de          : signal is "true";
+attribute mark_debug of ddram_addr        : signal is "true";
+attribute mark_debug of ddram_data        : signal is "true";
+attribute mark_debug of ddram_be          : signal is "true";
+attribute mark_debug of ddram_we          : signal is "true";
+attribute mark_debug of ce_pix            : signal is "true";
+attribute mark_debug of video_ce_o        : signal is "true";
+attribute mark_debug of video_red_o       : signal is "true";
+attribute mark_debug of video_green_o     : signal is "true";
+attribute mark_debug of video_blue_o      : signal is "true";
+attribute mark_debug of video_hs_o        : signal is "true";
+attribute mark_debug of video_vs_o        : signal is "true";
+attribute mark_debug of video_de_o        : signal is "true";
+attribute mark_debug of video_hblank_o    : signal is "true";
+attribute mark_debug of video_vblank_o    : signal is "true";
+
 begin
 
    -- MMCME2_ADV clock generators:
@@ -329,33 +376,36 @@ begin
     process (video_clk)
     begin
         if rising_edge(video_clk) then
-            video_ce_o     <= '0';
-            video_ce_ovl_o <= '0';
+            video_ce     <= '0';
+            video_ce_ovl <= '0';
 
             div <= std_logic_vector(unsigned(div) + 1);
             if div="000" then
-               video_ce_o <= '1';
+               video_ce <= '1';
             end if;
             if div(0) = '1' then
-               video_ce_ovl_o <= '1';
+               video_ce_ovl <= '1';
             end if;
 
             if dim_video = '1' then
-                video_red_o   <= "0" & main_video_red   & main_video_red   & main_video_red(2 downto 2);
-                video_green_o <= "0" & main_video_green & main_video_green & main_video_green(2 downto 2);
-                video_blue_o  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);
+                video_red   <= "0" & main_video_red   & main_video_red   & main_video_red(2 downto 2);
+                video_green <= "0" & main_video_green & main_video_green & main_video_green(2 downto 2);
+                video_blue  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);
             else
-                video_red_o   <= main_video_red   & main_video_red   & main_video_red(2 downto 1);
-                video_green_o <= main_video_green & main_video_green & main_video_green(2 downto 1);
-                video_blue_o  <= main_video_blue  & main_video_blue  & main_video_blue & main_video_blue;
+                video_red   <= main_video_red   & main_video_red   & main_video_red(2 downto 1);
+                video_green <= main_video_green & main_video_green & main_video_green(2 downto 1);
+                video_blue  <= main_video_blue  & main_video_blue  & main_video_blue & main_video_blue;
             end if;
 
-            video_hs_o     <= not main_video_hs;
-            video_vs_o     <= main_video_vs;
-            video_hblank_o <= main_video_hblank;
-            video_vblank_o <= main_video_vblank;
+            video_hs     <= not main_video_hs;
+            video_vs     <= main_video_vs;
+            video_hblank <= main_video_hblank;
+            video_vblank <= main_video_vblank;
         end if;
     end process;
+
+    video_de <= not (video_hblank or video_vblank);
+
 
     -- @This here remains a rather complicated TODO. sy2002 and/or MJoergen will support
     -- OLD COMMENT TAKEN FROM ANOTHER FILE, DOES NOT FULLY FIT HERE:
@@ -370,33 +420,55 @@ begin
     -- screen rotate
 
     i_screen_rotate : entity work.screen_rotate
-        port map (
+       port map (
+          --inputs
+          CLK_VIDEO      => video_clk,
+          CE_PIXEL       => video_ce,
+          VGA_R          => video_red,
+          VGA_G          => video_green,
+          VGA_B          => video_blue,
+          VGA_HS         => video_hs,
+          VGA_VS         => video_vs,
+          VGA_DE         => video_de,
+          rotate_ccw     => rotate_ccw,
+          no_rotate      => no_rotate,
+          flip           => flip,
+          FB_VBL         => '0',
+          FB_LL          => '0',
+          -- output to screen_buffer
+          video_rotated  => video_rotated,
+          DDRAM_CLK      => video_clk,
+          DDRAM_BUSY     => '0',
+          DDRAM_BURSTCNT => open,
+          DDRAM_ADDR     => ddram_addr,
+          DDRAM_DIN      => ddram_data,
+          DDRAM_BE       => ddram_be,
+          DDRAM_WE       => ddram_we,
+          DDRAM_RD       => open
+      ); -- i_screen_rotate
 
-        --inputs
-        CLK_VIDEO  => video_clk,
-        CE_PIXEL   => video_ce_o,
-        VGA_R      => video_red_o,
-        VGA_G      => video_green_o,
-        VGA_B      => video_blue_o,
-        VGA_HS     => video_hs_o,
-        VGA_VS     => video_vs_o,
-        VGA_DE     => video_de_o,
-        rotate_ccw => rotate_ccw,
-        no_rotate  => no_rotate,
-        flip       => flip,
-        FB_VBL     => '0',
-        FB_LL      => '0',
-        DDRAM_BUSY => '0', -- set this to 0 for now
-        -- outputs
-        video_rotated => video_rotated
-        --FB_EN        => FB_EN,
+   i_frame_buffer : entity work.frame_buffer
+      generic map (
+         G_ADDR_WIDTH => 17,
+         G_VIDEO_MODE => C_PAL_720_576_50
+      )
+      port map (
+         ddram_clk_i      => video_clk,
+         ddram_addr_i     => ddram_addr(15 downto 0) & ddram_be(7),
+         ddram_din_i      => ddram_data(31 downto 0),
+         ddram_we_i       => ddram_we,
+         video_clk_i      => video_clk,
+         video_ce_i       => ce_pix,
+         video_red_o      => video_red_o,
+         video_green_o    => video_green_o,
+         video_blue_o     => video_blue_o,
+         video_vs_o       => video_vs_o,
+         video_hs_o       => video_hs_o,
+         video_hblank_o   => video_hblank_o,
+         video_vblank_o   => video_vblank_o
+      ); -- i_frame_buffer
 
-        --FB_FORMAT    => FB_FORMAT,
-        --FB_WIDTH     => FB_WIDTH,
-        --FB_HEIGHT    => FB_HEIGHT,
-        --FB_BASE      => FB_BASE,
-        --FB_STRIDE    => FB_STRIDE
-    ); -- i_screen_rotate
+   video_de_o <= not (video_hblank_o or video_vblank_o);
 
    ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
