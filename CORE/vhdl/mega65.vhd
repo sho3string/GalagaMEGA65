@@ -82,7 +82,6 @@ port (
    -- Video output
    video_ce_o              : out std_logic;
    video_ce_ovl_o          : out std_logic;
-   video_retro15kHz_o      : out std_logic;
    video_red_o             : out std_logic_vector(7 downto 0);
    video_green_o           : out std_logic_vector(7 downto 0);
    video_blue_o            : out std_logic_vector(7 downto 0);
@@ -268,7 +267,6 @@ begin
          -- This is PAL 720x576 @ 50 Hz (pixel clock 27 MHz), but synchronized to main_clk (54 MHz).
          video_ce_o           => open,
          video_ce_ovl_o       => open,
-         video_retro15kHz_o   => open,
          video_red_o          => main_video_red,
          video_green_o        => main_video_green,
          video_blue_o         => main_video_blue,
@@ -366,9 +364,6 @@ begin
     --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
     --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
     --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
-    -- video_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
-    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-    video_retro15kHz_o <= '0';
 
     -- screen rotate
 
@@ -416,6 +411,9 @@ begin
                          2 when qnice_osm_control_i(C_MENU_HDMI_4_3_50)  = '1' else
                          1 when qnice_osm_control_i(C_MENU_HDMI_16_9_60) = '1' else
                          0;
+   -- qnice_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
+   --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
+   qnice_retro15kHz_o <= '0';
 
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
