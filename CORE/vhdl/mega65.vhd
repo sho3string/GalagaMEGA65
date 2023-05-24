@@ -219,6 +219,7 @@ constant C_MENU_DSWA_7 : natural := 35;
 -- Misc Options
 constant C_MENU_CRT_EMULATION : natural := 41;
 constant C_MENU_IMPROVE_AUDIO : natural := 42;
+constant C_FLIP_JOYS          : natural := 43;
 
 
 -- Galaga specific video processing
@@ -439,7 +440,7 @@ begin
    qnice_ascal_triplebuf_o    <= '0';
 
    -- Flip joystick ports (i.e. the joystick in port 2 is used as joystick 1 and vice versa)
-   qnice_flip_joyports_o      <= '0';
+   qnice_flip_joyports_o      <= qnice_osm_control_i(C_FLIP_JOYS);
 
    ---------------------------------------------------------------------------------------------
    -- Core specific device handling (QNICE clock domain)
