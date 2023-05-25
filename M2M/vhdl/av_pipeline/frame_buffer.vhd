@@ -54,6 +54,10 @@ architecture synthesis of frame_buffer is
    signal video_data_d   : std_logic_vector(31 downto 0);
 
    attribute mark_debug : string;
+   attribute mark_debug of video_hs      : signal is "true";
+   attribute mark_debug of video_vs      : signal is "true";
+   attribute mark_debug of video_hblank  : signal is "true";
+   attribute mark_debug of video_vblank  : signal is "true";
    attribute mark_debug of video_pixel_x : signal is "true";
    attribute mark_debug of video_pixel_y : signal is "true";
    attribute mark_debug of video_addr    : signal is "true";

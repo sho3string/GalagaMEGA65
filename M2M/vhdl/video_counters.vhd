@@ -65,13 +65,13 @@ begin
                if video_vblank_i = '0' then
                   video_y_vis <= video_y_vis + 1;
                end if;
+            end if;
 
-               if video_vs_d = '0' and video_vs_i = '1' then
-                  video_y_vis_o <= video_y_vis;
-                  video_y_tot_o <= video_y_tot + 1;
-                  video_y_vis   <= (others => '0');
-                  video_y_tot   <= (others => '0');
-               end if;
+            if video_vs_d = '0' and video_vs_i = '1' then
+               video_y_vis_o <= video_y_vis;
+               video_y_tot_o <= video_y_tot + 1;
+               video_y_vis   <= (others => '0');
+               video_y_tot   <= (others => '0');
             end if;
          end if;
 

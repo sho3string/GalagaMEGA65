@@ -244,25 +244,19 @@ signal ddram_be   : std_logic_vector( 7 downto 0);
 signal ddram_we   : std_logic;
 
 attribute mark_debug : string;
-attribute mark_debug of main_video_red    : signal is "true";
-attribute mark_debug of main_video_green  : signal is "true";
-attribute mark_debug of main_video_blue   : signal is "true";
-attribute mark_debug of main_video_vs     : signal is "true";
-attribute mark_debug of main_video_hs     : signal is "true";
-attribute mark_debug of main_video_hblank : signal is "true";
-attribute mark_debug of main_video_vblank : signal is "true";
 attribute mark_debug of video_ce          : signal is "true";
 attribute mark_debug of video_red         : signal is "true";
 attribute mark_debug of video_green       : signal is "true";
 attribute mark_debug of video_blue        : signal is "true";
 attribute mark_debug of video_vs          : signal is "true";
 attribute mark_debug of video_hs          : signal is "true";
+attribute mark_debug of video_vblank      : signal is "true";
+attribute mark_debug of video_hblank      : signal is "true";
 attribute mark_debug of video_de          : signal is "true";
 attribute mark_debug of ddram_addr        : signal is "true";
 attribute mark_debug of ddram_data        : signal is "true";
 attribute mark_debug of ddram_be          : signal is "true";
 attribute mark_debug of ddram_we          : signal is "true";
-attribute mark_debug of ce_pix            : signal is "true";
 attribute mark_debug of video_ce_o        : signal is "true";
 attribute mark_debug of video_red_o       : signal is "true";
 attribute mark_debug of video_green_o     : signal is "true";
@@ -376,15 +370,15 @@ begin
     process (video_clk)
     begin
         if rising_edge(video_clk) then
-            video_ce     <= '0';
-            video_ce_ovl <= '0';
+            video_ce       <= '0';
+            video_ce_ovl_o <= '0';
 
             div <= std_logic_vector(unsigned(div) + 1);
             if div="000" then
                video_ce <= '1';
             end if;
             if div(0) = '1' then
-               video_ce_ovl <= '1';
+               video_ce_ovl_o <= '1';
             end if;
 
             if dim_video = '1' then
@@ -458,7 +452,7 @@ begin
          ddram_din_i      => ddram_data(31 downto 0),
          ddram_we_i       => ddram_we,
          video_clk_i      => video_clk,
-         video_ce_i       => ce_pix,
+         video_ce_i       => video_ce,
          video_red_o      => video_red_o,
          video_green_o    => video_green_o,
          video_blue_o     => video_blue_o,
@@ -468,6 +462,7 @@ begin
          video_vblank_o   => video_vblank_o
       ); -- i_frame_buffer
 
+   video_ce_o <= video_ce;
    video_de_o <= not (video_hblank_o or video_vblank_o);
 
    ---------------------------------------------------------------------------------------------
@@ -492,7 +487,7 @@ begin
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
    qnice_dvi_o                <= '0';                                         -- 0=HDMI (with sound), 1=DVI (no sound)
-   qnice_scandoubler_o        <= '1';                                         -- no scandoubler
+   qnice_scandoubler_o        <= '0';                                         -- no scandoubler
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
    qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
 
