@@ -196,30 +196,33 @@ constant C_MENU_HDMI_4_3_50   : natural := 14;
 constant C_MENU_HDMI_5_4_50   : natural := 15;
 --constant C_MENU_ROT90         : natural := 16; -- TO DO
 
+constant C_MENU_MIDWAY        : natural := 21;
+constant C_MENU_NAMCO         : natural := 22;
+
 -- Dipswitch B
-constant C_MENU_DSWB_0 : natural := 24;
-constant C_MENU_DSWB_1 : natural := 25;
-constant C_MENU_DSWB_2 : natural := 26;
-constant C_MENU_DSWB_3 : natural := 27;
-constant C_MENU_DSWB_4 : natural := 28;
-constant C_MENU_DSWB_5 : natural := 29;
-constant C_MENU_DSWB_6 : natural := 30;
-constant C_MENU_DSWB_7 : natural := 31;
+constant C_MENU_MIDWAY_DSWB_0 : natural := 26;
+constant C_MENU_MIDWAY_DSWB_1 : natural := 27;
+constant C_MENU_MIDWAY_DSWB_2 : natural := 28;
+constant C_MENU_MIDWAY_DSWB_3 : natural := 29;
+constant C_MENU_MIDWAY_DSWB_4 : natural := 30;
+constant C_MENU_MIDWAY_DSWB_5 : natural := 31;
+constant C_MENU_MIDWAY_DSWB_6 : natural := 32;
+constant C_MENU_MIDWAY_DSWB_7 : natural := 33;
 
 -- Dipswitch A
-constant C_MENU_DSWA_0 : natural := 33;
-constant C_MENU_DSWA_1 : natural := 34;
-constant C_MENU_DSWA_2 : natural := 35;
-constant C_MENU_DSWA_3 : natural := 36;
-constant C_MENU_DSWA_4 : natural := 37;
-constant C_MENU_DSWA_5 : natural := 38;
-constant C_MENU_DSWA_6 : natural := 39;
-constant C_MENU_DSWA_7 : natural := 40;
+constant C_MENU_MIDWAY_DSWA_0 : natural := 35;
+constant C_MENU_MIDWAY_DSWA_1 : natural := 36;
+constant C_MENU_MIDWAY_DSWA_2 : natural := 37;
+constant C_MENU_MIDWAY_DSWA_3 : natural := 38;
+constant C_MENU_MIDWAY_DSWA_4 : natural := 39;
+constant C_MENU_MIDWAY_DSWA_5 : natural := 40;
+constant C_MENU_MIDWAY_DSWA_6 : natural := 41;
+constant C_MENU_MIDWAY_DSWA_7 : natural := 42;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 46;
-constant C_MENU_IMPROVE_AUDIO : natural := 47;
-constant C_FLIP_JOYS          : natural := 48;
+constant C_MENU_CRT_EMULATION : natural := 48;
+constant C_MENU_IMPROVE_AUDIO : natural := 49;
+constant C_FLIP_JOYS          : natural := 50;
 
 
 -- Galaga specific video processing
@@ -305,24 +308,24 @@ begin
          
          osm_control_i        => main_osm_control_i,
          
-         dsw_a_i => main_osm_control_i(C_MENU_DSWA_7) &
-                    main_osm_control_i(C_MENU_DSWA_6) &
-                    main_osm_control_i(C_MENU_DSWA_5) &
-                    main_osm_control_i(C_MENU_DSWA_4) &
-                    main_osm_control_i(C_MENU_DSWA_3) &
-                    main_osm_control_i(C_MENU_DSWA_2) &
-                    main_osm_control_i(C_MENU_DSWA_1) &
-                    main_osm_control_i(C_MENU_DSWA_0),
+         dsw_a_i => main_osm_control_i(C_MENU_MIDWAY_DSWA_7) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_6) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_5) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_4) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_3) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_2) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_1) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWA_0),
           
           
-         dsw_b_i => main_osm_control_i(C_MENU_DSWB_7) &
-                    main_osm_control_i(C_MENU_DSWB_6) &
-                    main_osm_control_i(C_MENU_DSWB_5) &
-                    main_osm_control_i(C_MENU_DSWB_4) &
-                    main_osm_control_i(C_MENU_DSWB_3) &
-                    main_osm_control_i(C_MENU_DSWB_2) &
-                    main_osm_control_i(C_MENU_DSWB_1) &
-                    main_osm_control_i(C_MENU_DSWB_0)
+         dsw_b_i => main_osm_control_i(C_MENU_MIDWAY_DSWB_7) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_6) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_5) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_4) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_3) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_2) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_1) &
+                    main_osm_control_i(C_MENU_MIDWAY_DSWB_0)
                  
       ); -- i_main
 
