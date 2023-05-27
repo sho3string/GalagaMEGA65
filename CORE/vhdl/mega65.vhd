@@ -190,36 +190,36 @@ signal rotate_ccw        : std_logic := flip_screen;
 
 constant C_MENU_OSMPAUSE      : natural := 4;  
 constant C_MENU_OSMDIM        : natural := 5;
-constant C_MENU_HDMI_16_9_50  : natural := 9;
-constant C_MENU_HDMI_16_9_60  : natural := 10;
-constant C_MENU_HDMI_4_3_50   : natural := 11;
-constant C_MENU_HDMI_5_4_50   : natural := 12;
-constant C_MENU_ROT90         : natural := 16;
+constant C_MENU_HDMI_16_9_50  : natural := 12;
+constant C_MENU_HDMI_16_9_60  : natural := 13;
+constant C_MENU_HDMI_4_3_50   : natural := 14;
+constant C_MENU_HDMI_5_4_50   : natural := 15;
+--constant C_MENU_ROT90         : natural := 16; -- TO DO
 
 -- Dipswitch B
-constant C_MENU_DSWB_0 : natural := 19;
-constant C_MENU_DSWB_1 : natural := 20;
-constant C_MENU_DSWB_2 : natural := 21;
-constant C_MENU_DSWB_3 : natural := 22;
-constant C_MENU_DSWB_4 : natural := 23;
-constant C_MENU_DSWB_5 : natural := 24;
-constant C_MENU_DSWB_6 : natural := 25;
-constant C_MENU_DSWB_7 : natural := 26;
+constant C_MENU_DSWB_0 : natural := 24;
+constant C_MENU_DSWB_1 : natural := 25;
+constant C_MENU_DSWB_2 : natural := 26;
+constant C_MENU_DSWB_3 : natural := 27;
+constant C_MENU_DSWB_4 : natural := 28;
+constant C_MENU_DSWB_5 : natural := 29;
+constant C_MENU_DSWB_6 : natural := 30;
+constant C_MENU_DSWB_7 : natural := 31;
 
 -- Dipswitch A
-constant C_MENU_DSWA_0 : natural := 28;
-constant C_MENU_DSWA_1 : natural := 29;
-constant C_MENU_DSWA_2 : natural := 30;
-constant C_MENU_DSWA_3 : natural := 31;
-constant C_MENU_DSWA_4 : natural := 32;
-constant C_MENU_DSWA_5 : natural := 33;
-constant C_MENU_DSWA_6 : natural := 34;
-constant C_MENU_DSWA_7 : natural := 35;
+constant C_MENU_DSWA_0 : natural := 33;
+constant C_MENU_DSWA_1 : natural := 34;
+constant C_MENU_DSWA_2 : natural := 35;
+constant C_MENU_DSWA_3 : natural := 36;
+constant C_MENU_DSWA_4 : natural := 37;
+constant C_MENU_DSWA_5 : natural := 38;
+constant C_MENU_DSWA_6 : natural := 39;
+constant C_MENU_DSWA_7 : natural := 40;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 41;
-constant C_MENU_IMPROVE_AUDIO : natural := 42;
-constant C_FLIP_JOYS          : natural := 43;
+constant C_MENU_CRT_EMULATION : natural := 46;
+constant C_MENU_IMPROVE_AUDIO : natural := 47;
+constant C_FLIP_JOYS          : natural := 48;
 
 
 -- Galaga specific video processing
