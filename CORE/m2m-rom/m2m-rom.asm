@@ -196,9 +196,9 @@ CUSTOM_MSG      XOR     R8, R8
 ; The On-Screen-Menu uses the heap for several data structures. This heap
 ; is located before the main system heap in memory.
 ; You need to deduct MENU_HEAP_SIZE from the actual heap size below.
-; Example: If your HEAP_SIZE would be 29696, then you write 29696-1024=28672
+; Example: If your HEAP_SIZE would be 29696, then you write 29696-1536=28160
 ; instead, but when doing the sanity check calculations, you use 29696
-MENU_HEAP_SIZE  .EQU 1024
+MENU_HEAP_SIZE  .EQU 1536
 
 #ifndef RELEASE
 
@@ -206,14 +206,14 @@ MENU_HEAP_SIZE  .EQU 1024
 ; this needs to be the last variable before the monitor variables as it is
 ; only defined as "BLOCK 1" to avoid a large amount of null-values in
 ; the ROM file
-HEAP_SIZE       .EQU 6144                       ; 7168 - 1024 = 6144
+HEAP_SIZE       .EQU 5632                       ; 7168 - 1536 = 5632
 HEAP            .BLOCK 1
 
 ; in RELEASE mode: 28k of heap which leads to a better user experience when
 ; it comes to folders with a lot of files
 #else
 
-HEAP_SIZE       .EQU 28672                      ; 29696 - 1024 = 28672
+HEAP_SIZE       .EQU 28160                      ; 29696 - 1536 = 28160
 HEAP            .BLOCK 1
 
 ; The monitor variables use 22 words, round to 32 for being safe and subtract
@@ -222,9 +222,9 @@ HEAP            .BLOCK 1
 ; The stack starts at 0xFEE0 (search var VAR$STACK_START in osm_rom.lis to
 ; calculate the address). To see, if there is enough room for the stack
 ; given the HEAP_SIZE do this calculation: Add 29696 words to HEAP which
-; is currently 0xXXXX and subtract the result from 0xFEE0. This yields
-; currently a stack size of more than 1.5k words, which is sufficient
-; for this program.
+; is currently 0x81C7 and subtract the result from 0xFEE0. This yields
+; currently a stack size of 2329, more than 1.5k words, and therefore
+; sufficient for this program.
 
                 .ORG    0xFEE0                  ; TODO: automate calculation
 #endif
