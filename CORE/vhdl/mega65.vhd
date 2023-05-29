@@ -233,14 +233,14 @@ constant C_MENU_NAMCO_DSWB_6  : natural := 55;
 constant C_MENU_NAMCO_DSWB_7  : natural := 56;
 
 -- Dipswitch A
-constant C_MENU_NAMCO_DSWA_0  : natural := 57;
-constant C_MENU_NAMCO_DSWA_1  : natural := 58;
-constant C_MENU_NAMCO_DSWA_2  : natural := 59;
-constant C_MENU_NAMCO_DSWA_3  : natural := 60;
-constant C_MENU_NAMCO_DSWA_4  : natural := 61;
-constant C_MENU_NAMCO_DSWA_5  : natural := 62;
-constant C_MENU_NAMCO_DSWA_6  : natural := 63;
-constant C_MENU_NAMCO_DSWA_7  : natural := 64;
+constant C_MENU_NAMCO_DSWA_0  : natural := 58;
+constant C_MENU_NAMCO_DSWA_1  : natural := 59;
+constant C_MENU_NAMCO_DSWA_2  : natural := 60;
+constant C_MENU_NAMCO_DSWA_3  : natural := 61;
+constant C_MENU_NAMCO_DSWA_4  : natural := 62;
+constant C_MENU_NAMCO_DSWA_5  : natural := 63;
+constant C_MENU_NAMCO_DSWA_6  : natural := 64;
+constant C_MENU_NAMCO_DSWA_7  : natural := 65;
 
 -- Misc Options
 constant C_MENU_CRT_EMULATION : natural := 71;
@@ -285,7 +285,7 @@ begin
               main_osm_control_i(C_MENU_MIDWAY_DSWA_1) &
               main_osm_control_i(C_MENU_MIDWAY_DSWA_0)  when main_osm_control_i(C_MENU_MIDWAY) = '1' else
                     
-   main_osm_control_i(C_MENU_NAMCO_DSWB_7) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_7) &
               main_osm_control_i(C_MENU_NAMCO_DSWA_6) &
               main_osm_control_i(C_MENU_NAMCO_DSWA_5) &
               main_osm_control_i(C_MENU_NAMCO_DSWA_4) &
@@ -303,7 +303,7 @@ begin
               main_osm_control_i(C_MENU_MIDWAY_DSWB_1) &
               main_osm_control_i(C_MENU_MIDWAY_DSWB_0)  when main_osm_control_i(C_MENU_MIDWAY) = '1' else
                     
-   main_osm_control_i(C_MENU_NAMCO_DSWB_7) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_7) &
               main_osm_control_i(C_MENU_NAMCO_DSWB_6) &
               main_osm_control_i(C_MENU_NAMCO_DSWB_5) &
               main_osm_control_i(C_MENU_NAMCO_DSWB_4) &
