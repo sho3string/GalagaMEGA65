@@ -243,6 +243,24 @@ signal ddram_data : std_logic_vector(63 downto 0);
 signal ddram_be   : std_logic_vector( 7 downto 0);
 signal ddram_we   : std_logic;
 
+-- 320x288 @ 50 Hz
+constant C_320_288_50 : video_modes_t := (
+   CLK_KHZ     => 6000,       -- 6 MHz
+   CEA_CTA_VIC => 0,
+   ASPECT      => "01",       -- aspect ratio: 01=4:3, 10=16:9: "01" for SVGA
+   PIXEL_REP   => '0',        -- no pixel repetition
+   H_PIXELS    => 320,        -- horizontal display width in pixels
+   V_PIXELS    => 288,        -- vertical display width in rows
+   H_PULSE     => 28,         -- horizontal sync pulse width in pixels
+   H_BP        => 28,         -- horizontal back porch width in pixels
+   H_FP        => 8,          -- horizontal front porch width in pixels
+   V_PULSE     => 2,          -- vertical sync pulse width in rows
+   V_BP        => 22,         -- vertical back porch width in rows
+   V_FP        => 1,          -- vertical front porch width in rows
+   H_POL       => '1',        -- horizontal sync pulse polarity (1 = positive, 0 = negative)
+   V_POL       => '1'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
+);
+
 attribute mark_debug : string;
 attribute mark_debug of video_ce          : signal is "true";
 attribute mark_debug of video_red         : signal is "true";
@@ -343,9 +361,9 @@ begin
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
          pot2_y_i             => main_pot2_y_i,
-         
+
          osm_control_i        => main_osm_control_i,
-         
+
          dsw_a_i => main_osm_control_i(C_MENU_DSWA_7) &
                     main_osm_control_i(C_MENU_DSWA_6) &
                     main_osm_control_i(C_MENU_DSWA_5) &
@@ -354,8 +372,8 @@ begin
                     main_osm_control_i(C_MENU_DSWA_2) &
                     main_osm_control_i(C_MENU_DSWA_1) &
                     main_osm_control_i(C_MENU_DSWA_0),
-          
-          
+
+
          dsw_b_i => main_osm_control_i(C_MENU_DSWB_7) &
                     main_osm_control_i(C_MENU_DSWB_6) &
                     main_osm_control_i(C_MENU_DSWB_5) &
@@ -364,10 +382,10 @@ begin
                     main_osm_control_i(C_MENU_DSWB_2) &
                     main_osm_control_i(C_MENU_DSWB_1) &
                     main_osm_control_i(C_MENU_DSWB_0)
-                 
+
       ); -- i_main
 
-    process (video_clk)
+    process (video_clk) -- 48 MHz
     begin
         if rising_edge(video_clk) then
             video_ce       <= '0';
@@ -375,10 +393,10 @@ begin
 
             div <= std_logic_vector(unsigned(div) + 1);
             if div="000" then
-               video_ce <= '1';
+               video_ce <= '1'; -- 6 MHz
             end if;
             if div(0) = '1' then
-               video_ce_ovl_o <= '1';
+               video_ce_ovl_o <= '1'; -- 24 MHz
             end if;
 
             if dim_video = '1' then
@@ -395,23 +413,57 @@ begin
             video_vs     <= main_video_vs;
             video_hblank <= main_video_hblank;
             video_vblank <= main_video_vblank;
+            video_de     <= not (main_video_hblank or main_video_vblank);
         end if;
     end process;
 
-    video_de <= not (video_hblank or video_vblank);
 
+    -- Use e.g. these lines when disabling screen rotation.
+--    video_red_o      <= video_red;
+--    video_green_o    <= video_green;
+--    video_blue_o     <= video_blue;
+--    video_vs_o       <= video_vs;
+--    video_hs_o       <= video_hs;
+--    video_hblank_o   <= video_hblank;
+--    video_vblank_o   <= video_vblank;
+--    video_ce_o       <= video_ce;
+--    video_de_o       <= video_de;
 
-    -- @This here remains a rather complicated TODO. sy2002 and/or MJoergen will support
-    -- OLD COMMENT TAKEN FROM ANOTHER FILE, DOES NOT FULLY FIT HERE:
-    -- On video_ce_o and video_ce_ovl_o: You have an important @TODO when porting a core:
-    -- video_ce_o: You need to make sure that video_ce_o divides clk_main_i such that it transforms clk_main_i
-    --             into the pixelclock of the core (means: the core's native output resolution pre-scandoubler)
-    -- video_ce_ovl_o: Clock enable for the OSM overlay and for sampling the core's (retro) output in a way that
-    --             it is displayed correctly on a "modern" analog input device: Make sure that video_ce_ovl_o
-    --             transforms clk_main_o into the post-scandoubler pixelclock that is valid for the target
-    --             resolution specified by VGA_DX/VGA_DY (globals.vhd)
-
-    -- screen rotate
+    -- The video output from the core has the following (empirically determined)
+    -- parameters:
+    -- CLK_KHZ     => 6000,       -- 6 MHz
+    -- H_PIXELS    => 288,        -- horizontal display width in pixels
+    -- V_PIXELS    => 224,        -- vertical display width in rows
+    -- H_PULSE     => 29,         -- horizontal sync pulse width in pixels
+    -- H_BP        => 44,         -- horizontal back porch width in pixels
+    -- H_FP        => 23,         -- horizontal front porch width in pixels
+    -- V_PULSE     => 8,          -- vertical sync pulse width in rows
+    -- V_BP        => 12,         -- vertical back porch width in rows
+    -- V_FP        => 20,         -- vertical front porch width in rows
+    -- This corresponds to a horizontal sync frequency of 15.625 kHz
+    -- and a vertical sync frequency of 59.19 Hz.
+    --
+    -- After screen rotation the visible part therefore has a size of 224x288 pixels.
+    -- In order to display this image we need a screen resolution that is large enough.
+    -- I've chosen a down-scaled version of the standard 576p. The important values here
+    -- are the horizontal sync frequency of 15.625 kHz and the fact that I'm keeping
+    -- the pixel clock rate of 6 MHz.
+    -- The calculation is as follows: The standard 576p has the following parameters:
+    -- (see M2M/vhdl/av_pipeline/video_modes_pkg.vhd):
+    -- * pixel clock rate of 27 MHz.
+    -- * horizontal sync frequency of 31.25 kHz.
+    -- * horizontal scan line time of 1000/31.25 = 32 us.
+    -- * horizontal visible pixels 720.
+    -- * horizontal visible time 720/27 = 26.67 us.
+    -- In a non-scandoubled domain the numbers change as follows:
+    -- * horizontal sync frequency of 31.25/2 = 15.625 kHz.
+    -- * horizontal scan line time of 32*2 = 64 us.
+    -- * horizontal visible time 26.67*2 = 53.33 us.
+    -- Since we are sticking with a 6 MHz pixel rate, we get:
+    -- * horizontal visible pixels 53.33*6 = 320.
+    -- Therefore, we have a visible screen area of 320x288 pixels, and our rotated image
+    -- of 224x288 must be centered in here. This leaves a border of (320-224)/2 = 48
+    -- pixels on either side.
 
     i_screen_rotate : entity work.screen_rotate
        port map (
@@ -441,14 +493,19 @@ begin
           DDRAM_RD       => open
       ); -- i_screen_rotate
 
+   -- Here G_ADDR_WIDTH is determined by the total number of visible pixels,
+   -- since each word in memory stores one pixel.
+   -- Here we have 288*224 = 64512, i.e. 16 bits of address is enough.
    i_frame_buffer : entity work.frame_buffer
       generic map (
-         G_ADDR_WIDTH => 17,
-         G_VIDEO_MODE => C_PAL_720_576_50
+         G_ADDR_WIDTH => 16,
+         G_H_LEFT     => 48,
+         G_H_RIGHT    => 224+48,
+         G_VIDEO_MODE => C_320_288_50
       )
       port map (
          ddram_clk_i      => video_clk,
-         ddram_addr_i     => ddram_addr(15 downto 0) & ddram_be(7),
+         ddram_addr_i     => ddram_addr(14 downto 0) & ddram_be(7),
          ddram_din_i      => ddram_data(31 downto 0),
          ddram_we_i       => ddram_we,
          video_clk_i      => video_clk,
@@ -482,7 +539,7 @@ begin
                          0;
    -- qnice_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-   qnice_retro15kHz_o <= '0';
+   qnice_retro15kHz_o <= '1';
 
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control

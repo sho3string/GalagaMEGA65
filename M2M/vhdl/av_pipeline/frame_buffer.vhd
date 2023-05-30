@@ -16,6 +16,8 @@ use work.video_modes_pkg.all;
 entity frame_buffer is
    generic (
       G_ADDR_WIDTH : natural;
+      G_H_LEFT     : natural;
+      G_H_RIGHT    : natural;
       G_VIDEO_MODE : video_modes_t
    );
    port (
@@ -39,29 +41,33 @@ end entity frame_buffer;
 
 architecture synthesis of frame_buffer is
 
-   signal video_hs       : std_logic;
-   signal video_vs       : std_logic;
-   signal video_hblank   : std_logic;
-   signal video_vblank   : std_logic;
-   signal video_pixel_x  : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
-   signal video_pixel_y  : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
-   signal video_addr     : std_logic_vector(G_ADDR_WIDTH-1 downto 0);
+   signal video_hs        : std_logic;
+   signal video_vs        : std_logic;
+   signal video_hblank    : std_logic;
+   signal video_vblank    : std_logic;
+   signal video_pixel_x   : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
+   signal video_pixel_y   : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
+   signal video_addr      : std_logic_vector(G_ADDR_WIDTH-1 downto 0);
 
-   signal video_hs_d     : std_logic;
-   signal video_vs_d     : std_logic;
-   signal video_hblank_d : std_logic;
-   signal video_vblank_d : std_logic;
-   signal video_data_d   : std_logic_vector(31 downto 0);
+   signal video_hs_d      : std_logic;
+   signal video_vs_d      : std_logic;
+   signal video_hblank_d  : std_logic;
+   signal video_vblank_d  : std_logic;
+   signal video_pixel_x_d : integer range 0 to G_VIDEO_MODE.H_PIXELS - 1;
+   signal video_pixel_y_d : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
+   signal video_data_d    : std_logic_vector(31 downto 0);
 
-   attribute mark_debug : string;
-   attribute mark_debug of video_hs      : signal is "true";
-   attribute mark_debug of video_vs      : signal is "true";
-   attribute mark_debug of video_hblank  : signal is "true";
-   attribute mark_debug of video_vblank  : signal is "true";
-   attribute mark_debug of video_pixel_x : signal is "true";
-   attribute mark_debug of video_pixel_y : signal is "true";
-   attribute mark_debug of video_addr    : signal is "true";
-   attribute mark_debug of video_data_d  : signal is "true";
+--   attribute mark_debug : string;
+--   attribute mark_debug of video_hs       : signal is "true";
+--   attribute mark_debug of video_vs       : signal is "true";
+--   attribute mark_debug of video_hblank   : signal is "true";
+--   attribute mark_debug of video_vblank   : signal is "true";
+--   attribute mark_debug of video_pixel_x  : signal is "true";
+--   attribute mark_debug of video_pixel_y  : signal is "true";
+--   attribute mark_debug of video_addr     : signal is "true";
+--   attribute mark_debug of video_data_d   : signal is "true";
+--   attribute mark_debug of video_hblank_d : signal is "true";
+--   attribute mark_debug of video_vblank_d : signal is "true";
 
 begin
 
@@ -114,37 +120,43 @@ begin
          n_sync    => open
       ); -- i_vga_controller
 
-   video_addr <= std_logic_vector(to_unsigned((video_pixel_y/2) * 112 + (video_pixel_x/2), G_ADDR_WIDTH));
+   video_addr <= std_logic_vector(to_unsigned(video_pixel_y * 224 + video_pixel_x - G_H_LEFT, G_ADDR_WIDTH));
 
    -- Store signals for one clock cycle due to BRAM read latency
    p_read : process (video_clk_i)
    begin
       if rising_edge(video_clk_i) then
-         video_hs_d     <= video_hs;
-         video_vs_d     <= video_vs;
-         video_hblank_d <= video_hblank;
-         video_vblank_d <= video_vblank;
+         if video_ce_i = '1' then
+            video_hs_d      <= video_hs;
+            video_vs_d      <= video_vs;
+            video_hblank_d  <= video_hblank;
+            video_vblank_d  <= video_vblank;
+            video_pixel_x_d <= video_pixel_x;
+            video_pixel_y_d <= video_pixel_y;
+         end if;
       end if;
    end process p_read;
 
    p_rgb : process (video_clk_i)
    begin
       if rising_edge(video_clk_i) then
-         video_red_o    <= video_data_d(23 downto 16);
-         video_green_o  <= video_data_d(15 downto  8);
-         video_blue_o   <= video_data_d( 7 downto  0);
-         video_hs_o     <= video_hs_d;
-         video_vs_o     <= video_vs_d;
-         video_hblank_o <= video_hblank_d;
-         video_vblank_o <= video_vblank_d;
+         if video_ce_i = '1' then
+            video_blue_o   <= video_data_d(23 downto 16);
+            video_green_o  <= video_data_d(15 downto  8);
+            video_red_o    <= video_data_d( 7 downto  0);
+            video_hs_o     <= video_hs_d;
+            video_vs_o     <= video_vs_d;
+            video_hblank_o <= video_hblank_d;
+            video_vblank_o <= video_vblank_d;
 
-         -- Screen blanking outside visible area
-         if video_hblank_d = '1' or video_vblank_d = '1' then
-            video_red_o   <= (others => '0');
-            video_green_o <= (others => '0');
-            video_blue_o  <= (others => '0');
+            -- Screen blanking outside visible area
+            if video_hblank_d = '1' or video_vblank_d = '1' or
+               video_pixel_x_d < G_H_LEFT or video_pixel_x_d >= G_H_RIGHT then
+               video_red_o   <= (others => '0');
+               video_green_o <= (others => '0');
+               video_blue_o  <= (others => '0');
+            end if;
          end if;
-
       end if;
    end process p_rgb;
 
