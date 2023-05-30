@@ -191,41 +191,69 @@ signal rotate_ccw        : std_logic := flip_screen;
 
 constant C_MENU_OSMPAUSE      : natural := 4;  
 constant C_MENU_OSMDIM        : natural := 5;
-constant C_MENU_HDMI_16_9_50  : natural := 9;
-constant C_MENU_HDMI_16_9_60  : natural := 10;
-constant C_MENU_HDMI_4_3_50   : natural := 11;
-constant C_MENU_HDMI_5_4_50   : natural := 12;
-constant C_MENU_ROT90         : natural := 16;
+constant C_MENU_HDMI_16_9_50  : natural := 12;
+constant C_MENU_HDMI_16_9_60  : natural := 13;
+constant C_MENU_HDMI_4_3_50   : natural := 14;
+constant C_MENU_HDMI_5_4_50   : natural := 15;
+--constant C_MENU_ROT90         : natural := 16; -- TO DO
 
+constant C_MENU_MIDWAY        : natural := 21;
+constant C_MENU_NAMCO         : natural := 22;
+
+-- Midway DIPs
 -- Dipswitch B
-constant C_MENU_DSWB_0 : natural := 19;
-constant C_MENU_DSWB_1 : natural := 20;
-constant C_MENU_DSWB_2 : natural := 21;
-constant C_MENU_DSWB_3 : natural := 22;
-constant C_MENU_DSWB_4 : natural := 23;
-constant C_MENU_DSWB_5 : natural := 24;
-constant C_MENU_DSWB_6 : natural := 25;
-constant C_MENU_DSWB_7 : natural := 26;
+constant C_MENU_MIDWAY_DSWB_0 : natural := 27;
+constant C_MENU_MIDWAY_DSWB_1 : natural := 28;
+constant C_MENU_MIDWAY_DSWB_2 : natural := 29;
+constant C_MENU_MIDWAY_DSWB_3 : natural := 30;
+constant C_MENU_MIDWAY_DSWB_4 : natural := 31;
+constant C_MENU_MIDWAY_DSWB_5 : natural := 32;
+constant C_MENU_MIDWAY_DSWB_6 : natural := 33;
+constant C_MENU_MIDWAY_DSWB_7 : natural := 34;
 
 -- Dipswitch A
-constant C_MENU_DSWA_0 : natural := 28;
-constant C_MENU_DSWA_1 : natural := 29;
-constant C_MENU_DSWA_2 : natural := 30;
-constant C_MENU_DSWA_3 : natural := 31;
-constant C_MENU_DSWA_4 : natural := 32;
-constant C_MENU_DSWA_5 : natural := 33;
-constant C_MENU_DSWA_6 : natural := 34;
-constant C_MENU_DSWA_7 : natural := 35;
+constant C_MENU_MIDWAY_DSWA_0 : natural := 36;
+constant C_MENU_MIDWAY_DSWA_1 : natural := 37;
+constant C_MENU_MIDWAY_DSWA_2 : natural := 38;
+constant C_MENU_MIDWAY_DSWA_3 : natural := 39;
+constant C_MENU_MIDWAY_DSWA_4 : natural := 40;
+constant C_MENU_MIDWAY_DSWA_5 : natural := 41;
+constant C_MENU_MIDWAY_DSWA_6 : natural := 42;
+constant C_MENU_MIDWAY_DSWA_7 : natural := 43;
+
+
+-- Namco DIPs
+-- Dipswitch B
+constant C_MENU_NAMCO_DSWB_0  : natural := 49;
+constant C_MENU_NAMCO_DSWB_1  : natural := 50;
+constant C_MENU_NAMCO_DSWB_2  : natural := 51;
+constant C_MENU_NAMCO_DSWB_3  : natural := 52;
+constant C_MENU_NAMCO_DSWB_4  : natural := 53;
+constant C_MENU_NAMCO_DSWB_5  : natural := 54;
+constant C_MENU_NAMCO_DSWB_6  : natural := 55;
+constant C_MENU_NAMCO_DSWB_7  : natural := 56;
+
+-- Dipswitch A
+constant C_MENU_NAMCO_DSWA_0  : natural := 58;
+constant C_MENU_NAMCO_DSWA_1  : natural := 59;
+constant C_MENU_NAMCO_DSWA_2  : natural := 60;
+constant C_MENU_NAMCO_DSWA_3  : natural := 61;
+constant C_MENU_NAMCO_DSWA_4  : natural := 62;
+constant C_MENU_NAMCO_DSWA_5  : natural := 63;
+constant C_MENU_NAMCO_DSWA_6  : natural := 64;
+constant C_MENU_NAMCO_DSWA_7  : natural := 65;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 41;
-constant C_MENU_IMPROVE_AUDIO : natural := 42;
-constant C_FLIP_JOYS          : natural := 43;
+constant C_MENU_CRT_EMULATION : natural := 71;
+constant C_MENU_IMPROVE_AUDIO : natural := 72;
+constant C_FLIP_JOYS          : natural := 73;
 
 
 -- Galaga specific video processing
 signal div                       : std_logic_vector(2 downto 0);
 signal dim_video                 : std_logic;
+signal dsw_a_i                   : std_logic_vector(7 downto 0);
+signal dsw_b_i                   : std_logic_vector(7 downto 0);
 
 signal video_ce     : std_logic;
 signal video_red    : std_logic_vector(7 downto 0);
@@ -306,6 +334,42 @@ begin
    main_rst_o   <= main_rst;
    video_clk_o  <= video_clk;
    video_rst_o  <= video_rst;
+   
+   dsw_a_i <= main_osm_control_i(C_MENU_MIDWAY_DSWA_7) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_6) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_5) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_4) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_3) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_2) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_1) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWA_0)  when main_osm_control_i(C_MENU_MIDWAY) = '1' else
+                    
+              main_osm_control_i(C_MENU_NAMCO_DSWA_7) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_6) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_5) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_4) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_3) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_2) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_1) &
+              main_osm_control_i(C_MENU_NAMCO_DSWA_0);       
+   
+  dsw_b_i <=  main_osm_control_i(C_MENU_MIDWAY_DSWB_7) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_6) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_5) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_4) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_3) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_2) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_1) &
+              main_osm_control_i(C_MENU_MIDWAY_DSWB_0)  when main_osm_control_i(C_MENU_MIDWAY) = '1' else
+                    
+              main_osm_control_i(C_MENU_NAMCO_DSWB_7) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_6) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_5) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_4) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_3) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_2) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_1) &
+              main_osm_control_i(C_MENU_NAMCO_DSWB_0);       
   
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
@@ -315,6 +379,7 @@ begin
    i_main : entity work.main
       generic map (
          G_VDNUM              => C_VDNUM
+         
       )
       port map (
          clk_main_i           => main_clk,
@@ -350,39 +415,19 @@ begin
          joy_1_left_n_i       => main_joy_1_left_n_i,
          joy_1_right_n_i      => main_joy_1_right_n_i,
          joy_1_fire_n_i       => main_joy_1_fire_n_i,
-
          joy_2_up_n_i         => main_joy_2_up_n_i,
          joy_2_down_n_i       => main_joy_2_down_n_i,
          joy_2_left_n_i       => main_joy_2_left_n_i,
          joy_2_right_n_i      => main_joy_2_right_n_i,
          joy_2_fire_n_i       => main_joy_2_fire_n_i,
-
          pot1_x_i             => main_pot1_x_i,
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
          pot2_y_i             => main_pot2_y_i,
 
          osm_control_i        => main_osm_control_i,
-
-         dsw_a_i => main_osm_control_i(C_MENU_DSWA_7) &
-                    main_osm_control_i(C_MENU_DSWA_6) &
-                    main_osm_control_i(C_MENU_DSWA_5) &
-                    main_osm_control_i(C_MENU_DSWA_4) &
-                    main_osm_control_i(C_MENU_DSWA_3) &
-                    main_osm_control_i(C_MENU_DSWA_2) &
-                    main_osm_control_i(C_MENU_DSWA_1) &
-                    main_osm_control_i(C_MENU_DSWA_0),
-
-
-         dsw_b_i => main_osm_control_i(C_MENU_DSWB_7) &
-                    main_osm_control_i(C_MENU_DSWB_6) &
-                    main_osm_control_i(C_MENU_DSWB_5) &
-                    main_osm_control_i(C_MENU_DSWB_4) &
-                    main_osm_control_i(C_MENU_DSWB_3) &
-                    main_osm_control_i(C_MENU_DSWB_2) &
-                    main_osm_control_i(C_MENU_DSWB_1) &
-                    main_osm_control_i(C_MENU_DSWB_0)
-
+         dsw_a_i              => dsw_a_i,
+         dsw_b_i              => dsw_b_i
       ); -- i_main
 
     process (video_clk) -- 48 MHz
