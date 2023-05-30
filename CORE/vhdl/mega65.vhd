@@ -509,6 +509,8 @@ begin
     -- Therefore, we have a visible screen area of 320x288 pixels, and our rotated image
     -- of 224x288 must be centered in here. This leaves a border of (320-224)/2 = 48
     -- pixels on either side.
+    -- Nevertheless, on my VGA monitor, this video signal is recognized as
+    -- 720x288 @ 50Hz.
 
     i_screen_rotate : entity work.screen_rotate
        port map (
