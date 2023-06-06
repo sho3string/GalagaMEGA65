@@ -18,18 +18,17 @@ use work.video_modes_pkg.all;
 library xpm;
 use xpm.vcomponents.all;
 
-
 entity MEGA65_Core is
 port (
    CLK                     : in  std_logic;              -- 100 MHz clock
    RESET_M2M_N             : in  std_logic;              -- Debounced system reset in system clock domain
 
    -- Share clock and reset with the framework
-   main_clk_o              : out std_logic;        -- Galaga's 18 MHz main clock
-   main_rst_o              : out std_logic;        -- Galaga's reset, synchronized
+   main_clk_o              : out std_logic;              -- Galaga's 18 MHz main clock
+   main_rst_o              : out std_logic;              -- Galaga's reset, synchronized
    
-   video_clk_o             : out std_logic;        -- video clock 48 MHz
-   video_rst_o             : out std_logic;        -- video reset, synchronized
+   video_clk_o             : out std_logic;              -- video clock 48 MHz
+   video_rst_o             : out std_logic;              -- video reset, synchronized
 
    --------------------------------------------------------------------------------------------------------
    -- QNICE Clock Domain
@@ -43,13 +42,13 @@ port (
    qnice_dvi_o             : out std_logic;              -- 0=HDMI (with sound), 1=DVI (no sound)
    qnice_video_mode_o      : out natural range 0 to 3;   -- HDMI 1280x720 @ 50 Hz resolution = mode 0, 1280x720 @ 60 Hz resolution = mode 1, PAL 576p in 4:3 and 5:4 are modes 2 and 3
    qnice_scandoubler_o     : out std_logic;              -- 0 = no scandoubler, 1 = scandoubler
-   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync
    qnice_audio_mute_o      : out std_logic;
    qnice_audio_filter_o    : out std_logic;
    qnice_zoom_crop_o       : out std_logic;
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
+   qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
    qnice_retro15kHz_o      : out std_logic;
 
    -- Flip joystick ports
@@ -100,6 +99,8 @@ port (
    -- M2M Keyboard interface (incl. drive led)
    main_kb_key_num_i       : in  integer range 0 to 79;  -- cycles through all MEGA65 keys
    main_kb_key_pressed_n_i : in  std_logic;              -- low active: debounced feedback: is kb_key_num_i pressed right now?
+   main_power_led_o        : out std_logic;
+   main_power_led_col_o    : out std_logic_vector(23 downto 0);    
    main_drive_led_o        : out std_logic;
    main_drive_led_col_o    : out std_logic_vector(23 downto 0);
 
@@ -172,86 +173,71 @@ signal main_video_hs       : std_logic;
 signal main_video_hblank   : std_logic;
 signal main_video_vblank   : std_logic;
 
-signal status              : signed(31 downto 0);
-signal forced_scandoubler  : std_logic;
-signal gamma_bus           : std_logic_vector(21 downto 0);
-
-signal direct_video      : std_logic;
-signal flip              : std_logic := '0';
-signal video_rotated     : std_logic;
-signal flip_screen       : std_logic := status(8);
-signal no_rotate         : std_logic; -- := status(2) OR direct_video;
-signal rotate_ccw        : std_logic := flip_screen;
-
 ---------------------------------------------------------------------------------------------
 -- qnice_clk
 ---------------------------------------------------------------------------------------------
 
--- @TODO: Change all these democore menu items
+constant C_MENU_OSMPAUSE      : natural := 2;  
+constant C_MENU_OSMDIM        : natural := 3;
+constant C_MENU_HDMI_16_9_50  : natural := 10;
+constant C_MENU_HDMI_16_9_60  : natural := 11;
+constant C_MENU_HDMI_4_3_50   : natural := 12;
+constant C_MENU_HDMI_5_4_50   : natural := 13;
 
-constant C_MENU_OSMPAUSE      : natural := 4;  
-constant C_MENU_OSMDIM        : natural := 5;
-constant C_MENU_HDMI_16_9_50  : natural := 12;
-constant C_MENU_HDMI_16_9_60  : natural := 13;
-constant C_MENU_HDMI_4_3_50   : natural := 14;
-constant C_MENU_HDMI_5_4_50   : natural := 15;
+constant C_MENU_VGA_STD       : natural := 19;
+constant C_MENU_VGA_15KHZHSVS : natural := 23;
+constant C_MENU_VGA_15KHZCS   : natural := 24;
 
-constant C_MENU_VGA_STD       : natural := 21;
-constant C_MENU_VGA_15KHZHSVS : natural := 25;
-constant C_MENU_VGA_15KHZCS   : natural := 26;
-
-constant C_MENU_MIDWAY        : natural := 32;
-constant C_MENU_NAMCO         : natural := 33;
+constant C_MENU_MIDWAY        : natural := 30;
+constant C_MENU_NAMCO         : natural := 31;
 
 -- Midway DIPs
 -- Dipswitch B
-constant C_MENU_MIDWAY_DSWB_0 : natural := 38;
-constant C_MENU_MIDWAY_DSWB_1 : natural := 39;
-constant C_MENU_MIDWAY_DSWB_2 : natural := 40;
-constant C_MENU_MIDWAY_DSWB_3 : natural := 41;
-constant C_MENU_MIDWAY_DSWB_4 : natural := 42;
-constant C_MENU_MIDWAY_DSWB_5 : natural := 43;
-constant C_MENU_MIDWAY_DSWB_6 : natural := 44;
-constant C_MENU_MIDWAY_DSWB_7 : natural := 45;
+constant C_MENU_MIDWAY_DSWB_0 : natural := 36;
+constant C_MENU_MIDWAY_DSWB_1 : natural := 37;
+constant C_MENU_MIDWAY_DSWB_2 : natural := 38;
+constant C_MENU_MIDWAY_DSWB_3 : natural := 39;
+constant C_MENU_MIDWAY_DSWB_4 : natural := 40;
+constant C_MENU_MIDWAY_DSWB_5 : natural := 41;
+constant C_MENU_MIDWAY_DSWB_6 : natural := 42;
+constant C_MENU_MIDWAY_DSWB_7 : natural := 43;
 
 -- Dipswitch A
-constant C_MENU_MIDWAY_DSWA_0 : natural := 47;
-constant C_MENU_MIDWAY_DSWA_1 : natural := 48;
-constant C_MENU_MIDWAY_DSWA_2 : natural := 49;
-constant C_MENU_MIDWAY_DSWA_3 : natural := 50;
-constant C_MENU_MIDWAY_DSWA_4 : natural := 51;
-constant C_MENU_MIDWAY_DSWA_5 : natural := 52;
-constant C_MENU_MIDWAY_DSWA_6 : natural := 53;
-constant C_MENU_MIDWAY_DSWA_7 : natural := 54;
+constant C_MENU_MIDWAY_DSWA_0 : natural := 45;
+constant C_MENU_MIDWAY_DSWA_1 : natural := 46;
+constant C_MENU_MIDWAY_DSWA_2 : natural := 47;
+constant C_MENU_MIDWAY_DSWA_3 : natural := 48;
+constant C_MENU_MIDWAY_DSWA_4 : natural := 49;
+constant C_MENU_MIDWAY_DSWA_5 : natural := 50;
+constant C_MENU_MIDWAY_DSWA_6 : natural := 51;
+constant C_MENU_MIDWAY_DSWA_7 : natural := 52;
 
 
 -- Namco DIPs
 -- Dipswitch B
-constant C_MENU_NAMCO_DSWB_0  : natural := 60;
-constant C_MENU_NAMCO_DSWB_1  : natural := 61;
-constant C_MENU_NAMCO_DSWB_2  : natural := 62;
-constant C_MENU_NAMCO_DSWB_3  : natural := 63;
-constant C_MENU_NAMCO_DSWB_4  : natural := 64;
-constant C_MENU_NAMCO_DSWB_5  : natural := 65;
-constant C_MENU_NAMCO_DSWB_6  : natural := 66;
-constant C_MENU_NAMCO_DSWB_7  : natural := 67;
+constant C_MENU_NAMCO_DSWB_0  : natural := 58;
+constant C_MENU_NAMCO_DSWB_1  : natural := 59;
+constant C_MENU_NAMCO_DSWB_2  : natural := 60;
+constant C_MENU_NAMCO_DSWB_3  : natural := 61;
+constant C_MENU_NAMCO_DSWB_4  : natural := 62;
+constant C_MENU_NAMCO_DSWB_5  : natural := 63;
+constant C_MENU_NAMCO_DSWB_6  : natural := 64;
+constant C_MENU_NAMCO_DSWB_7  : natural := 65;
 
 -- Dipswitch A
-constant C_MENU_NAMCO_DSWA_0  : natural := 69;
-constant C_MENU_NAMCO_DSWA_1  : natural := 70;
-constant C_MENU_NAMCO_DSWA_2  : natural := 71;
-constant C_MENU_NAMCO_DSWA_3  : natural := 72;
-constant C_MENU_NAMCO_DSWA_4  : natural := 73;
-constant C_MENU_NAMCO_DSWA_5  : natural := 74;
-constant C_MENU_NAMCO_DSWA_6  : natural := 75;
-constant C_MENU_NAMCO_DSWA_7  : natural := 76;
+constant C_MENU_NAMCO_DSWA_0  : natural := 67;
+constant C_MENU_NAMCO_DSWA_1  : natural := 68;
+constant C_MENU_NAMCO_DSWA_2  : natural := 69;
+constant C_MENU_NAMCO_DSWA_3  : natural := 70;
+constant C_MENU_NAMCO_DSWA_4  : natural := 71;
+constant C_MENU_NAMCO_DSWA_5  : natural := 72;
+constant C_MENU_NAMCO_DSWA_6  : natural := 73;
+constant C_MENU_NAMCO_DSWA_7  : natural := 74;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 82;
-constant C_MENU_IMPROVE_AUDIO : natural := 83;
-constant C_FLIP_JOYS          : natural := 84;
-constant C_MENU_ROT90         : natural := 85;
-
+constant C_MENU_CRT_EMULATION : natural := 80;
+constant C_FLIP_JOYS          : natural := 81;
+constant C_MENU_ROT90         : natural := 82;
 
 -- Galaga specific video processing
 signal div                    : std_logic_vector(2 downto 0);
@@ -280,8 +266,6 @@ signal video_rot_de     : std_logic;
 
 signal video_rot90_flag : std_logic;
 
-signal output_rot90 : std_logic_vector(29 downto 0);
-
 -- Output from screen_rotate
 signal ddram_addr : std_logic_vector(28 downto 0);
 signal ddram_data : std_logic_vector(63 downto 0);
@@ -308,8 +292,14 @@ constant C_320_288_50 : video_modes_t := (
 
 begin
 
+   -- Configure the LEDs:
+   -- Power led on and green, drive led always off
+   main_power_led_o       <= '1';
+   main_power_led_col_o   <= x"00FF00";
+   main_drive_led_o       <= '0';
+   main_drive_led_col_o   <= x"00FF00"; 
+
    -- MMCME2_ADV clock generators:
-   --   @TODO YOURCORE:       54 MHz
    clk_gen : entity work.clk
       port map (
          sys_clk_i         => CLK,             -- expects 100 MHz
@@ -454,14 +444,11 @@ begin
             if dim_video = '1' then
                 video_red   <= "0" & main_video_red   & main_video_red   & main_video_red(2 downto 2);
                 video_green <= "0" & main_video_green & main_video_green & main_video_green(2 downto 2);
-                video_blue  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);
-
+                video_blue  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);  
             else
                 video_red   <= main_video_red   & main_video_red   & main_video_red(2 downto 1);
                 video_green <= main_video_green & main_video_green & main_video_green(2 downto 1);
                 video_blue  <= main_video_blue  & main_video_blue  & main_video_blue & main_video_blue;
-                
-               
             end if;
 
             video_hs     <= not main_video_hs;
@@ -475,7 +462,6 @@ begin
     p_select_video_signals : process(video_rot90_flag)
     begin
         if video_rot90_flag then
-        
            video_red_o      <= video_rot_red;
            video_green_o    <= video_rot_green;
            video_blue_o     <= video_rot_blue;
@@ -484,7 +470,6 @@ begin
            video_hblank_o   <= video_rot_hblank;
            video_vblank_o   <= video_rot_vblank;
            video_ce_o       <= video_ce;
-           
        else
            video_red_o      <= video_red;
            video_green_o    <= video_green;
@@ -493,8 +478,7 @@ begin
            video_hs_o       <= video_hs;
            video_hblank_o   <= video_hblank;
            video_vblank_o   <= video_vblank;
-           video_ce_o       <= video_ce;
-           
+           video_ce_o       <= video_ce;           
        end if;
     end process;
 
@@ -547,13 +531,13 @@ begin
           VGA_HS         => video_hs,
           VGA_VS         => video_vs,
           VGA_DE         => video_de,
-          rotate_ccw     => rotate_ccw,
-          no_rotate      => no_rotate,
-          flip           => flip,
+          rotate_ccw     => '0',
+          no_rotate      => '0',
+          flip           => '0',
           FB_VBL         => '0',
           FB_LL          => '0',
           -- output to screen_buffer
-          video_rotated  => video_rotated,
+          video_rotated  => open,
           DDRAM_CLK      => video_clk,
           DDRAM_BUSY     => '0',
           DDRAM_BURSTCNT => open,
@@ -591,8 +575,6 @@ begin
          video_vblank_o   => video_rot_vblank
       ); -- i_frame_buffer
 
-   --video_ce_o <= video_ce;
-   --video_de_o <= not (video_hblank_o or video_vblank_o);
    ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
@@ -610,14 +592,16 @@ begin
                          0;
    -- qnice_retro15kHz_o: '1', if the output from the core (post-scandoubler) in the retro 15 kHz analog RGB mode.
    --             Hint: Scandoubler off does not automatically mean retro 15 kHz on.
-   qnice_retro15kHz_o <= '1';
+   qnice_scandoubler_o        <= (not qnice_osm_control_i(C_MENU_VGA_15KHZHSVS)) and
+                                 (not qnice_osm_control_i(C_MENU_VGA_15KHZCS));   
+   qnice_retro15kHz_o <= qnice_osm_control_i(C_MENU_VGA_15KHZHSVS) or qnice_osm_control_i(C_MENU_VGA_15KHZCS);
+   qnice_csync_o      <= qnice_osm_control_i(C_MENU_VGA_15KHZCS);
 
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
    qnice_dvi_o                <= '0';                                         -- 0=HDMI (with sound), 1=DVI (no sound)
-   qnice_scandoubler_o        <= '0';                                         -- no scandoubler
    qnice_audio_mute_o         <= '0';                                         -- audio is not muted
-   qnice_audio_filter_o       <= qnice_osm_control_i(C_MENU_IMPROVE_AUDIO);   -- 0 = raw audio, 1 = use filters from globals.vhd
+   qnice_audio_filter_o       <= '1';                                         -- 0 = raw audio, 1 = use filters from globals.vhd
 
    -- ascal filters that are applied while processing the input
    -- 00 : Nearest Neighbour
