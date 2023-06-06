@@ -313,7 +313,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal writ
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 76;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 88;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -321,7 +321,7 @@ constant OPTM_SIZE         : natural := 76;  -- amount of items including empty 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
 -- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
 constant OPTM_DX           : natural := 23;
-constant OPTM_DY           : natural := 26;
+constant OPTM_DY           : natural := 28;
 
 constant OPTM_ITEMS        : string :=
    " Galaga\n"              &
@@ -333,7 +333,7 @@ constant OPTM_ITEMS        : string :=
    "\n"                     &
    " Display Settings\n"    &
    "\n"                     &
-   " HDMI Settings\n"       &
+   " HDMI: %s\n"            &
    " HDMI Settings\n"       &
    "\n"                     &
    " 720p 50 Hz 16:9\n"     &
@@ -342,6 +342,20 @@ constant OPTM_ITEMS        : string :=
    " 576p 50 Hz 5:4\n"      &
     "\n"                    &
    " Back to main menu\n"   &
+   
+   " VGA: %s\n"             &  -- VGA submenu
+   " VGA Display Mode\n"    &
+   "\n"                     &
+   " Standard\n"            &
+   "\n"                     &
+   " Retro 15 kHz mode\n"   &
+   "\n"                     &
+   " 15 kHz with HS/VS\n"   &
+   " 15 kHz with CSYNC\n"   &
+   "\n"                     &
+   " Back to main menu\n"   &
+   
+   
    "\n"                     &
    " Game Setup\n"          &
    "\n"                     &
@@ -398,6 +412,7 @@ constant OPTM_ITEMS        : string :=
    " HDMI: CRT emulation\n" &
    " Audio improvements\n"  &
    " Flip joystick ports\n" &
+   " Rotate screen 90\n"    &
    "\n"                     &
    " Close Menu\n";
 
@@ -453,6 +468,7 @@ constant OPTM_G_NAMCO_DSWA4       : integer := 37;
 constant OPTM_G_NAMCO_DSWA5       : integer := 38;
 constant OPTM_G_NAMCO_DSWA6       : integer := 39;
 constant OPTM_G_NAMCO_DSWA7       : integer := 40;
+constant OPTM_G_VGA_MODES         : integer := 41;
 
 -- !!! DO NOT TOUCH !!!
 type OPTM_GTYPE is array (0 to OPTM_SIZE - 1) of integer range 0 to 2**OPTM_GTC- 1;
@@ -478,6 +494,21 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_HDMI,                                               -- 576p 50 Hz 5:4
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_CLOSE + OPTM_G_SUBMENU,                             -- Close submenu / back to main menus
+                                             
+                                             OPTM_G_SUBMENU,
+                                             OPTM_G_HEADLINE,
+                                             OPTM_G_LINE,
+                                             OPTM_G_VGA_MODES     + OPTM_G_STDSEL,
+                                             OPTM_G_LINE,
+                                             OPTM_G_TEXT,
+                                             OPTM_G_LINE,
+                                             OPTM_G_VGA_MODES,
+                                             OPTM_G_VGA_MODES,
+                                             OPTM_G_LINE,
+                                             OPTM_G_CLOSE         + OPTM_G_SUBMENU,
+                                             
+                                             
+                                             
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_TEXT + OPTM_G_HEADLINE,                             -- Headline "Game Setup"
                                              OPTM_G_LINE,                                               -- Line
@@ -534,6 +565,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_CRT   + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- On/Off toggle ("Single Select")
                                              OPTM_G_Audio + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- On/Off toggle ("Single Select")
                                              OPTM_G_FLIPJ + OPTM_G_SINGLESEL,                           -- On/Off toggle ("Single Select")
+                                             OPTM_G_ROT90 + OPTM_G_SINGLESEL,                           -- On/Off toggle ("Single Select")
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_CLOSE                                               -- Close Menu
                                            );

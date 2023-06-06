@@ -18,6 +18,7 @@ use work.video_modes_pkg.all;
 library xpm;
 use xpm.vcomponents.all;
 
+
 entity MEGA65_Core is
 port (
    CLK                     : in  std_logic;              -- 100 MHz clock
@@ -91,7 +92,6 @@ port (
    video_hs_o              : out std_logic;
    video_hblank_o          : out std_logic;
    video_vblank_o          : out std_logic;
-   video_de_o              : out std_logic;
   
    -- Audio output (Signed PCM)
    main_audio_left_o       : out signed(15 downto 0);
@@ -195,58 +195,62 @@ constant C_MENU_HDMI_16_9_50  : natural := 12;
 constant C_MENU_HDMI_16_9_60  : natural := 13;
 constant C_MENU_HDMI_4_3_50   : natural := 14;
 constant C_MENU_HDMI_5_4_50   : natural := 15;
---constant C_MENU_ROT90         : natural := 16; -- TO DO
 
-constant C_MENU_MIDWAY        : natural := 21;
-constant C_MENU_NAMCO         : natural := 22;
+constant C_MENU_VGA_STD       : natural := 21;
+constant C_MENU_VGA_15KHZHSVS : natural := 25;
+constant C_MENU_VGA_15KHZCS   : natural := 26;
+
+constant C_MENU_MIDWAY        : natural := 32;
+constant C_MENU_NAMCO         : natural := 33;
 
 -- Midway DIPs
 -- Dipswitch B
-constant C_MENU_MIDWAY_DSWB_0 : natural := 27;
-constant C_MENU_MIDWAY_DSWB_1 : natural := 28;
-constant C_MENU_MIDWAY_DSWB_2 : natural := 29;
-constant C_MENU_MIDWAY_DSWB_3 : natural := 30;
-constant C_MENU_MIDWAY_DSWB_4 : natural := 31;
-constant C_MENU_MIDWAY_DSWB_5 : natural := 32;
-constant C_MENU_MIDWAY_DSWB_6 : natural := 33;
-constant C_MENU_MIDWAY_DSWB_7 : natural := 34;
+constant C_MENU_MIDWAY_DSWB_0 : natural := 38;
+constant C_MENU_MIDWAY_DSWB_1 : natural := 39;
+constant C_MENU_MIDWAY_DSWB_2 : natural := 40;
+constant C_MENU_MIDWAY_DSWB_3 : natural := 41;
+constant C_MENU_MIDWAY_DSWB_4 : natural := 42;
+constant C_MENU_MIDWAY_DSWB_5 : natural := 43;
+constant C_MENU_MIDWAY_DSWB_6 : natural := 44;
+constant C_MENU_MIDWAY_DSWB_7 : natural := 45;
 
 -- Dipswitch A
-constant C_MENU_MIDWAY_DSWA_0 : natural := 36;
-constant C_MENU_MIDWAY_DSWA_1 : natural := 37;
-constant C_MENU_MIDWAY_DSWA_2 : natural := 38;
-constant C_MENU_MIDWAY_DSWA_3 : natural := 39;
-constant C_MENU_MIDWAY_DSWA_4 : natural := 40;
-constant C_MENU_MIDWAY_DSWA_5 : natural := 41;
-constant C_MENU_MIDWAY_DSWA_6 : natural := 42;
-constant C_MENU_MIDWAY_DSWA_7 : natural := 43;
+constant C_MENU_MIDWAY_DSWA_0 : natural := 47;
+constant C_MENU_MIDWAY_DSWA_1 : natural := 48;
+constant C_MENU_MIDWAY_DSWA_2 : natural := 49;
+constant C_MENU_MIDWAY_DSWA_3 : natural := 50;
+constant C_MENU_MIDWAY_DSWA_4 : natural := 51;
+constant C_MENU_MIDWAY_DSWA_5 : natural := 52;
+constant C_MENU_MIDWAY_DSWA_6 : natural := 53;
+constant C_MENU_MIDWAY_DSWA_7 : natural := 54;
 
 
 -- Namco DIPs
 -- Dipswitch B
-constant C_MENU_NAMCO_DSWB_0  : natural := 49;
-constant C_MENU_NAMCO_DSWB_1  : natural := 50;
-constant C_MENU_NAMCO_DSWB_2  : natural := 51;
-constant C_MENU_NAMCO_DSWB_3  : natural := 52;
-constant C_MENU_NAMCO_DSWB_4  : natural := 53;
-constant C_MENU_NAMCO_DSWB_5  : natural := 54;
-constant C_MENU_NAMCO_DSWB_6  : natural := 55;
-constant C_MENU_NAMCO_DSWB_7  : natural := 56;
+constant C_MENU_NAMCO_DSWB_0  : natural := 60;
+constant C_MENU_NAMCO_DSWB_1  : natural := 61;
+constant C_MENU_NAMCO_DSWB_2  : natural := 62;
+constant C_MENU_NAMCO_DSWB_3  : natural := 63;
+constant C_MENU_NAMCO_DSWB_4  : natural := 64;
+constant C_MENU_NAMCO_DSWB_5  : natural := 65;
+constant C_MENU_NAMCO_DSWB_6  : natural := 66;
+constant C_MENU_NAMCO_DSWB_7  : natural := 67;
 
 -- Dipswitch A
-constant C_MENU_NAMCO_DSWA_0  : natural := 58;
-constant C_MENU_NAMCO_DSWA_1  : natural := 59;
-constant C_MENU_NAMCO_DSWA_2  : natural := 60;
-constant C_MENU_NAMCO_DSWA_3  : natural := 61;
-constant C_MENU_NAMCO_DSWA_4  : natural := 62;
-constant C_MENU_NAMCO_DSWA_5  : natural := 63;
-constant C_MENU_NAMCO_DSWA_6  : natural := 64;
-constant C_MENU_NAMCO_DSWA_7  : natural := 65;
+constant C_MENU_NAMCO_DSWA_0  : natural := 69;
+constant C_MENU_NAMCO_DSWA_1  : natural := 70;
+constant C_MENU_NAMCO_DSWA_2  : natural := 71;
+constant C_MENU_NAMCO_DSWA_3  : natural := 72;
+constant C_MENU_NAMCO_DSWA_4  : natural := 73;
+constant C_MENU_NAMCO_DSWA_5  : natural := 74;
+constant C_MENU_NAMCO_DSWA_6  : natural := 75;
+constant C_MENU_NAMCO_DSWA_7  : natural := 76;
 
 -- Misc Options
-constant C_MENU_CRT_EMULATION : natural := 71;
-constant C_MENU_IMPROVE_AUDIO : natural := 72;
-constant C_FLIP_JOYS          : natural := 73;
+constant C_MENU_CRT_EMULATION : natural := 82;
+constant C_MENU_IMPROVE_AUDIO : natural := 83;
+constant C_FLIP_JOYS          : natural := 84;
+constant C_MENU_ROT90         : natural := 85;
 
 
 -- Galaga specific video processing
@@ -264,6 +268,20 @@ signal video_hs     : std_logic;
 signal video_vblank : std_logic;
 signal video_hblank : std_logic;
 signal video_de     : std_logic;
+
+signal video_rot_ce     : std_logic;
+signal video_rot_red    : std_logic_vector(7 downto 0);
+signal video_rot_green  : std_logic_vector(7 downto 0);
+signal video_rot_blue   : std_logic_vector(7 downto 0);
+signal video_rot_vs     : std_logic;
+signal video_rot_hs     : std_logic;
+signal video_rot_vblank : std_logic;
+signal video_rot_hblank : std_logic;
+signal video_rot_de     : std_logic;
+
+signal video_rot90_flag : std_logic;
+
+signal output_rot90 : std_logic_vector(29 downto 0);
 
 -- Output from screen_rotate
 signal ddram_addr : std_logic_vector(28 downto 0);
@@ -289,30 +307,6 @@ constant C_320_288_50 : video_modes_t := (
    V_POL       => '1'         -- vertical sync pulse polarity (1 = positive, 0 = negative)
 );
 
-attribute mark_debug : string;
-attribute mark_debug of video_ce          : signal is "true";
-attribute mark_debug of video_red         : signal is "true";
-attribute mark_debug of video_green       : signal is "true";
-attribute mark_debug of video_blue        : signal is "true";
-attribute mark_debug of video_vs          : signal is "true";
-attribute mark_debug of video_hs          : signal is "true";
-attribute mark_debug of video_vblank      : signal is "true";
-attribute mark_debug of video_hblank      : signal is "true";
-attribute mark_debug of video_de          : signal is "true";
-attribute mark_debug of ddram_addr        : signal is "true";
-attribute mark_debug of ddram_data        : signal is "true";
-attribute mark_debug of ddram_be          : signal is "true";
-attribute mark_debug of ddram_we          : signal is "true";
-attribute mark_debug of video_ce_o        : signal is "true";
-attribute mark_debug of video_red_o       : signal is "true";
-attribute mark_debug of video_green_o     : signal is "true";
-attribute mark_debug of video_blue_o      : signal is "true";
-attribute mark_debug of video_hs_o        : signal is "true";
-attribute mark_debug of video_vs_o        : signal is "true";
-attribute mark_debug of video_de_o        : signal is "true";
-attribute mark_debug of video_hblank_o    : signal is "true";
-attribute mark_debug of video_vblank_o    : signal is "true";
-
 begin
 
    -- MMCME2_ADV clock generators:
@@ -329,6 +323,19 @@ begin
          video_rst_o       => video_rst        -- video reset, synchronized
       
       ); -- clk_gen
+      
+      
+   i_cdc_qnice2video : xpm_cdc_array_single
+      generic map (
+         WIDTH => 1
+      )
+      port map (
+         src_clk           => qnice_clk_i,
+         src_in(0)         => qnice_osm_control_i(C_MENU_ROT90),
+         dest_clk          => video_clk,
+         dest_out(0)       => video_rot90_flag
+      ); -- i_cdc_qnice2video
+
 
    main_clk_o   <= main_clk;
    main_rst_o   <= main_rst;
@@ -369,8 +376,9 @@ begin
               main_osm_control_i(C_MENU_NAMCO_DSWB_3) &
               main_osm_control_i(C_MENU_NAMCO_DSWB_2) &
               main_osm_control_i(C_MENU_NAMCO_DSWB_1) &
-              main_osm_control_i(C_MENU_NAMCO_DSWB_0);       
-  
+              main_osm_control_i(C_MENU_NAMCO_DSWB_0);   
+   
+            
    ---------------------------------------------------------------------------------------------
    -- main_clk (MiSTer core's clock)
    ---------------------------------------------------------------------------------------------
@@ -448,10 +456,13 @@ begin
                 video_red   <= "0" & main_video_red   & main_video_red   & main_video_red(2 downto 2);
                 video_green <= "0" & main_video_green & main_video_green & main_video_green(2 downto 2);
                 video_blue  <= "0" & main_video_blue  & main_video_blue  & main_video_blue & main_video_blue(1 downto 1);
+
             else
                 video_red   <= main_video_red   & main_video_red   & main_video_red(2 downto 1);
                 video_green <= main_video_green & main_video_green & main_video_green(2 downto 1);
                 video_blue  <= main_video_blue  & main_video_blue  & main_video_blue & main_video_blue;
+                
+               
             end if;
 
             video_hs     <= not main_video_hs;
@@ -461,18 +472,32 @@ begin
             video_de     <= not (main_video_hblank or main_video_vblank);
         end if;
     end process;
-
-
-    -- Use e.g. these lines when disabling screen rotation.
---    video_red_o      <= video_red;
---    video_green_o    <= video_green;
---    video_blue_o     <= video_blue;
---    video_vs_o       <= video_vs;
---    video_hs_o       <= video_hs;
---    video_hblank_o   <= video_hblank;
---    video_vblank_o   <= video_vblank;
---    video_ce_o       <= video_ce;
---    video_de_o       <= video_de;
+    
+    p_select_video_signals : process(video_rot90_flag)
+    begin
+        if video_rot90_flag then
+        
+           video_red_o      <= video_rot_red;
+           video_green_o    <= video_rot_green;
+           video_blue_o     <= video_rot_blue;
+           video_vs_o       <= video_rot_vs;
+           video_hs_o       <= video_rot_hs;
+           video_hblank_o   <= video_rot_hblank;
+           video_vblank_o   <= video_rot_vblank;
+           video_ce_o       <= video_rot_ce;
+           
+       else
+           video_red_o      <= video_red;
+           video_green_o    <= video_green;
+           video_blue_o     <= video_blue;
+           video_vs_o       <= video_vs;
+           video_hs_o       <= video_hs;
+           video_hblank_o   <= video_hblank;
+           video_vblank_o   <= video_vblank;
+           video_ce_o       <= video_ce;
+           
+       end if;
+    end process;
 
     -- The video output from the core has the following (empirically determined)
     -- parameters:
@@ -550,25 +575,25 @@ begin
          G_H_RIGHT    => 224+48,
          G_VIDEO_MODE => C_320_288_50
       )
+      
       port map (
          ddram_clk_i      => video_clk,
          ddram_addr_i     => ddram_addr(14 downto 0) & ddram_be(7),
          ddram_din_i      => ddram_data(31 downto 0),
          ddram_we_i       => ddram_we,
          video_clk_i      => video_clk,
-         video_ce_i       => video_ce,
-         video_red_o      => video_red_o,
-         video_green_o    => video_green_o,
-         video_blue_o     => video_blue_o,
-         video_vs_o       => video_vs_o,
-         video_hs_o       => video_hs_o,
-         video_hblank_o   => video_hblank_o,
-         video_vblank_o   => video_vblank_o
+         video_ce_i       => video_rot_ce,
+         video_red_o      => video_rot_red,
+         video_green_o    => video_rot_green,
+         video_blue_o     => video_rot_blue,
+         video_vs_o       => video_rot_vs,
+         video_hs_o       => video_rot_hs,
+         video_hblank_o   => video_rot_hblank,
+         video_vblank_o   => video_rot_vblank
       ); -- i_frame_buffer
 
-   video_ce_o <= video_ce;
-   video_de_o <= not (video_hblank_o or video_vblank_o);
-
+   --video_ce_o <= video_ce;
+   --video_de_o <= not (video_hblank_o or video_vblank_o);
    ---------------------------------------------------------------------------------------------
    -- Audio and video settings (QNICE clock domain)
    ---------------------------------------------------------------------------------------------
@@ -645,3 +670,4 @@ begin
 
 
 end architecture synthesis;
+
