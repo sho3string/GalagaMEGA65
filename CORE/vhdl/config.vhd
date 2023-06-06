@@ -563,9 +563,9 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_TEXT +  OPTM_G_HEADLINE,                            -- Misc Settings
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_CRT   + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- On/Off toggle ("Single Select")
-                                             OPTM_G_Audio + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- On/Off toggle ("Single Select")
-                                             OPTM_G_FLIPJ + OPTM_G_SINGLESEL,                           -- On/Off toggle ("Single Select")
-                                             OPTM_G_ROT90 + OPTM_G_SINGLESEL,                           -- On/Off toggle ("Single Select")
+                                             OPTM_G_Audio + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- Audio improvements On/Off toggle ("Single Select")
+                                             OPTM_G_FLIPJ + OPTM_G_SINGLESEL,                           -- Flip joys On/Off toggle ("Single Select")
+                                             OPTM_G_ROT90 + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- Rotate On/Off toggle ("Single Select")
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_CLOSE                                               -- Close Menu
                                            );

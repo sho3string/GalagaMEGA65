@@ -254,10 +254,10 @@ constant C_MENU_ROT90         : natural := 85;
 
 
 -- Galaga specific video processing
-signal div                       : std_logic_vector(2 downto 0);
-signal dim_video                 : std_logic;
-signal dsw_a_i                   : std_logic_vector(7 downto 0);
-signal dsw_b_i                   : std_logic_vector(7 downto 0);
+signal div                    : std_logic_vector(2 downto 0);
+signal dim_video              : std_logic;
+signal dsw_a_i                : std_logic_vector(7 downto 0);
+signal dsw_b_i                : std_logic_vector(7 downto 0);
 
 signal video_ce     : std_logic;
 signal video_red    : std_logic_vector(7 downto 0);
@@ -269,7 +269,6 @@ signal video_vblank : std_logic;
 signal video_hblank : std_logic;
 signal video_de     : std_logic;
 
---signal video_rot_ce     : std_logic;
 signal video_rot_red    : std_logic_vector(7 downto 0);
 signal video_rot_green  : std_logic_vector(7 downto 0);
 signal video_rot_blue   : std_logic_vector(7 downto 0);
