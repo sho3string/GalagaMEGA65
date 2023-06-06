@@ -269,7 +269,7 @@ signal video_vblank : std_logic;
 signal video_hblank : std_logic;
 signal video_de     : std_logic;
 
-signal video_rot_ce     : std_logic;
+--signal video_rot_ce     : std_logic;
 signal video_rot_red    : std_logic_vector(7 downto 0);
 signal video_rot_green  : std_logic_vector(7 downto 0);
 signal video_rot_blue   : std_logic_vector(7 downto 0);
@@ -484,7 +484,7 @@ begin
            video_hs_o       <= video_rot_hs;
            video_hblank_o   <= video_rot_hblank;
            video_vblank_o   <= video_rot_vblank;
-           video_ce_o       <= video_rot_ce;
+           video_ce_o       <= video_ce;
            
        else
            video_red_o      <= video_red;
@@ -582,7 +582,7 @@ begin
          ddram_din_i      => ddram_data(31 downto 0),
          ddram_we_i       => ddram_we,
          video_clk_i      => video_clk,
-         video_ce_i       => video_rot_ce,
+         video_ce_i       => video_ce,
          video_red_o      => video_rot_red,
          video_green_o    => video_rot_green,
          video_blue_o     => video_rot_blue,
