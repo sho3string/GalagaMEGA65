@@ -57,18 +57,6 @@ architecture synthesis of frame_buffer is
    signal video_pixel_y_d : integer range 0 to G_VIDEO_MODE.V_PIXELS - 1;
    signal video_data_d    : std_logic_vector(31 downto 0);
 
---   attribute mark_debug : string;
---   attribute mark_debug of video_hs       : signal is "true";
---   attribute mark_debug of video_vs       : signal is "true";
---   attribute mark_debug of video_hblank   : signal is "true";
---   attribute mark_debug of video_vblank   : signal is "true";
---   attribute mark_debug of video_pixel_x  : signal is "true";
---   attribute mark_debug of video_pixel_y  : signal is "true";
---   attribute mark_debug of video_addr     : signal is "true";
---   attribute mark_debug of video_data_d   : signal is "true";
---   attribute mark_debug of video_hblank_d : signal is "true";
---   attribute mark_debug of video_vblank_d : signal is "true";
-
 begin
 
    i_tdp_ram : entity work.tdp_ram
@@ -120,7 +108,7 @@ begin
          n_sync    => open
       ); -- i_vga_controller
 
-   video_addr <= std_logic_vector(to_unsigned(video_pixel_y * 224 + video_pixel_x - G_H_LEFT, G_ADDR_WIDTH));
+   video_addr <= std_logic_vector(to_unsigned(video_pixel_y * (G_H_RIGHT - G_H_LEFT) + video_pixel_x - G_H_LEFT, G_ADDR_WIDTH));
 
    -- Store signals for one clock cycle due to BRAM read latency
    p_read : process (video_clk_i)
