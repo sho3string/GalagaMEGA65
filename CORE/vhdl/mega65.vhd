@@ -271,6 +271,52 @@ signal ddram_data : std_logic_vector(63 downto 0);
 signal ddram_be   : std_logic_vector( 7 downto 0);
 signal ddram_we   : std_logic;
 
+-- ROM devices for Galaga
+
+-- CPU1 - GALAGA GAME ROM
+signal qnice_cpu1_rom_we          : std_logic;
+signal qnice_cpu1_rom_addr        : std_logic_vector(15 downto 0);
+signal qnice_cpu1_rom_data_to     : std_logic_vector(7 downto 0); -- data in
+signal qnice_cpu1_rom_data_from	  : std_logic_vector(7 downto 0); -- data out
+
+-- CPU2 - GALAGA SUB CPU ROM
+signal qnice_cpu2_rom_we          : std_logic;
+signal qnice_cpu2_rom_addr        : std_logic_vector(15 downto 0);
+signal qnice_cpu2_rom_data_to     : std_logic_vector(7 downto 0); -- data in
+signal qnice_cpu2_rom_data_from   : std_logic_vector(7 downto 0); -- data out
+
+-- CPU2 - GALAGA SND CPU ROM
+signal qnice_cpu3_rom_we          : std_logic;
+signal qnice_cpu3_rom_addr        : std_logic_vector(15 downto 0);
+signal qnice_cpu3_rom_data_to     : std_logic_vector(7 downto 0); -- data in
+signal qnice_cpu3_rom_data_from   : std_logic_vector(7 downto 0); -- data out
+
+-- GFX 1
+signal signal_bgrom_we            : std_logic;
+signal qnice_bgtile_rom_addr      : std_logic_vector(15 downto 0);
+signal qnice_bggraphx_data_from   : std_logic_vector(7 downto 0); 
+signal qnice_bggraphx_data_to     : std_logic_vector(7 downto 0); 
+
+-- GFX 2
+signal signal_sprom_we            : std_logic;
+signal qnice_sprite_rom_addr      : std_logic_vector(15 downto 0);
+signal qnice_spgraphx_data_from   : std_logic_vector(7 downto 0); 
+signal qnice_spgraphx_data_to     : std_logic_vector(7 downto 0);
+
+-- MCUs
+signal signal_cs51xx_we            : std_logic;
+signal qnice_cs51xx_rom_addr       : std_logic_vector(10 downto 0);
+signal qnice_cs51xx_rom_data_to    : std_logic_vector( 7 downto 0);
+signal qnice_cs51xx_rom_data_from  : std_logic_vector( 7 downto 0);
+
+
+signal signal_cs54xx_we            : std_logic;
+signal qnice_cs54xx_rom_addr       : std_logic_vector(10 downto 0);
+signal qnice_cs54xx_rom_data_to    : std_logic_vector( 7 downto 0);
+signal qnice_cs54xx_rom_data_from  : std_logic_vector( 7 downto 0);
+
+
+
 -- 320x288 @ 50 Hz
 constant C_320_288_50 : video_modes_t := (
    CLK_KHZ     => 6000,       -- 6 MHz
@@ -629,12 +675,27 @@ begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
       qnice_dev_data_o     <= x"EEEE";
       qnice_dev_wait_o     <= '0';
-
+      
+      -- galaga game cpu 
+      qnice_cpu1_rom_we            <= '0';               
+      qnice_cpu1_rom_addr          <= (others => '0');
+      qnice_cpu1_rom_data_to       <= (others => '0');
+      
+      qnice_cpu2_rom_we            <= '0';               
+      qnice_cpu2_rom_addr          <= (others => '0');
+      qnice_cpu2_rom_data_to       <= (others => '0');
+      
+      qnice_cpu3_rom_we            <= '0';               
+      qnice_cpu3_rom_addr          <= (others => '0');
+      qnice_cpu3_rom_data_to       <= (others => '0');
 
       case qnice_dev_id_i is
+      
+            
 
          -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) or other devices here
          -- Device numbers need to be >= 0x0100
+         
 
          when others => null;
       end case;

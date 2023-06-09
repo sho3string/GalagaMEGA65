@@ -148,6 +148,23 @@ constant C_CRTROMS_MAN           : crtrom_buf_array := ( x"EEEE", x"EEEE",
 --               b) Don't forget to zero-terminate each of your substrings of C_CRTROMS_AUTO_NAMES by adding "& ENDSTR;"
 --               c) Don't forget to finish the C_CRTROMS_AUTO array with x"EEEE"
 
+constant C_DEV_GAL_CPU_ROM1           : std_logic_vector(15 downto 0) := x"0100";     -- GALAGA CPU1 ROM 
+constant C_DEV_GAL_CPU_ROM2           : std_logic_vector(15 downto 0) := x"0101";     -- GALAGA CPU2 ROM 
+constant C_DEV_GAL_CPU_ROM3           : std_logic_vector(15 downto 0) := x"0102";     -- GALAGA CPU3 ROM 
+constant C_DEV_GAL_GFX1               : std_logic_vector(15 downto 0) := x"0103";
+constant C_DEV_GAL_GFX2               : std_logic_vector(15 downto 0) := x"0104";
+constant C_DEV_GAL_MCU1               : std_logic_vector(15 downto 0) := x"0105";
+constant C_DEV_GAL_MCU2               : std_logic_vector(15 downto 0) := x"0106";
+
+-- GALAGA core specific ROMs
+constant ROM1_MAIN_CPU_ROM            : string  := "arcade/galaga/rom1.rom" & ENDSTR; -- z80 cpu 1
+constant ROM2_SUB_CPU_ROM             : string  := "arcade/galaga/rom2.rom" & ENDSTR; -- z80 sub cpu
+constant ROM3_SND_CPU_ROm             : string  := "arcade/galaga/rom3.rom" & ENDSTR; -- z80 snd cpu
+constant GFX1_BG_ROM                  : string  := "arcade/galaga/gfx1.rom" & ENDSTR; -- bg layer shapes
+constant GFX2_FG_ROM                  : string  := "arcade/galaga/gfx1.rom" & ENDSTR; -- sprite shapes
+constant NAMCO51XX_MCU_ROM            : string  := "arcade/galaga/51xx.bin" & ENDSTR; -- 51xx mcu
+constant NAMCO54XX_MCU_ROM            : string  := "arcade/galaga/54xx.bin" & ENDSTR; -- 54xx mcu
+
 -- M2M framework constants
 constant C_CRTROMS_AUTO_NUM      : natural := 0;                                       -- Amount of automatically loadable ROMs and carts, if more tha    n 3: also adjust CRTROM_MAN_MAX in M2M/rom/shell_vars.asm, Needs to be in sync with config.vhd. Maximum is 16
 constant C_CRTROMS_AUTO_NAMES    : string  := "" & ENDSTR;
