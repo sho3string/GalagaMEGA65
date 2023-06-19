@@ -266,56 +266,19 @@ signal video_rot_de     : std_logic;
 signal video_rot90_flag : std_logic;
 
 -- Output from screen_rotate
-signal ddram_addr : std_logic_vector(28 downto 0);
-signal ddram_data : std_logic_vector(63 downto 0);
-signal ddram_be   : std_logic_vector( 7 downto 0);
-signal ddram_we   : std_logic;
+signal ddram_addr       : std_logic_vector(28 downto 0);
+signal ddram_data       : std_logic_vector(63 downto 0);
+signal ddram_be         : std_logic_vector( 7 downto 0);
+signal ddram_we         : std_logic;
 
 -- ROM devices for Galaga
+signal main_dn_addr     : std_logic_vector(15 downto 0);
+signal main_dn_data     : std_logic_vector(7 downto 0);
+signal main_dn_wr       : std_logic;
 
--- CPU1 - GALAGA GAME ROM
-signal qnice_cpu1_rom_we          : std_logic;
-signal qnice_cpu1_rom_addr        : std_logic_vector(15 downto 0);
-signal qnice_cpu1_rom_data_to     : std_logic_vector(7 downto 0); -- data in
-signal qnice_cpu1_rom_data_from	  : std_logic_vector(7 downto 0); -- data out
-
--- CPU2 - GALAGA SUB CPU ROM
-signal qnice_cpu2_rom_we          : std_logic;
-signal qnice_cpu2_rom_addr        : std_logic_vector(15 downto 0);
-signal qnice_cpu2_rom_data_to     : std_logic_vector(7 downto 0); -- data in
-signal qnice_cpu2_rom_data_from   : std_logic_vector(7 downto 0); -- data out
-
--- CPU2 - GALAGA SND CPU ROM
-signal qnice_cpu3_rom_we          : std_logic;
-signal qnice_cpu3_rom_addr        : std_logic_vector(15 downto 0);
-signal qnice_cpu3_rom_data_to     : std_logic_vector(7 downto 0); -- data in
-signal qnice_cpu3_rom_data_from   : std_logic_vector(7 downto 0); -- data out
-
--- GFX 1
-signal signal_bgrom_we            : std_logic;
-signal qnice_bgtile_rom_addr      : std_logic_vector(15 downto 0);
-signal qnice_bggraphx_data_from   : std_logic_vector(7 downto 0); 
-signal qnice_bggraphx_data_to     : std_logic_vector(7 downto 0); 
-
--- GFX 2
-signal signal_sprom_we            : std_logic;
-signal qnice_sprite_rom_addr      : std_logic_vector(15 downto 0);
-signal qnice_spgraphx_data_from   : std_logic_vector(7 downto 0); 
-signal qnice_spgraphx_data_to     : std_logic_vector(7 downto 0);
-
--- MCUs
-signal signal_cs51xx_we            : std_logic;
-signal qnice_cs51xx_rom_addr       : std_logic_vector(10 downto 0);
-signal qnice_cs51xx_rom_data_to    : std_logic_vector( 7 downto 0);
-signal qnice_cs51xx_rom_data_from  : std_logic_vector( 7 downto 0);
-
-
-signal signal_cs54xx_we            : std_logic;
-signal qnice_cs54xx_rom_addr       : std_logic_vector(10 downto 0);
-signal qnice_cs54xx_rom_data_to    : std_logic_vector( 7 downto 0);
-signal qnice_cs54xx_rom_data_from  : std_logic_vector( 7 downto 0);
-
-
+signal qnice_dn_addr    : std_logic_vector(15 downto 0);
+signal qnice_dn_data    : std_logic_vector(7 downto 0);
+signal qnice_dn_wr      : std_logic;
 
 -- 320x288 @ 50 Hz
 constant C_320_288_50 : video_modes_t := (
@@ -466,6 +429,10 @@ begin
          pot1_y_i             => main_pot1_y_i,
          pot2_x_i             => main_pot2_x_i,
          pot2_y_i             => main_pot2_y_i,
+
+         dn_addr_i            => main_dn_addr,
+         dn_data_i            => main_dn_data,
+         dn_wr_i              => main_dn_wr,
 
          osm_control_i        => main_osm_control_i,
          dsw_a_i              => dsw_a_i,
@@ -673,33 +640,81 @@ begin
    core_specific_devices : process(all)
    begin
       -- make sure that this is x"EEEE" by default and avoid a register here by having this default value
-      qnice_dev_data_o     <= x"EEEE";
-      qnice_dev_wait_o     <= '0';
-      
-      -- galaga game cpu 
-      qnice_cpu1_rom_we            <= '0';               
-      qnice_cpu1_rom_addr          <= (others => '0');
-      qnice_cpu1_rom_data_to       <= (others => '0');
-      
-      qnice_cpu2_rom_we            <= '0';               
-      qnice_cpu2_rom_addr          <= (others => '0');
-      qnice_cpu2_rom_data_to       <= (others => '0');
-      
-      qnice_cpu3_rom_we            <= '0';               
-      qnice_cpu3_rom_addr          <= (others => '0');
-      qnice_cpu3_rom_data_to       <= (others => '0');
+      qnice_dev_data_o <= x"EEEE";
+      qnice_dev_wait_o <= '0';
+
+      -- Default values
+      qnice_dn_wr      <= '0';
+      qnice_dn_addr    <= (others => '0');
+      qnice_dn_data    <= (others => '0');
 
       case qnice_dev_id_i is
-      
-            
 
-         -- @TODO YOUR RAMs or ROMs (e.g. for cartridges) or other devices here
-         -- Device numbers need to be >= 0x0100
-         
+--rom1_cs  <= '1' when dn_addr(15 downto 14) = "00"     else '0'; -- 16k
+--rom2_cs  <= '1' when dn_addr(15 downto 12) = "0100"   else '0'; -- 4k
+--rom3_cs  <= '1' when dn_addr(15 downto 12) = "0101"   else '0'; -- 4k
+--roms_cs  <= '1' when dn_addr(15 downto 13) = "011"    else '0'; -- 8k
+--romb_cs  <= '1' when dn_addr(15 downto 13) = "100"    else '0'; -- 8k
+--rom51_cs <= '1' when dn_addr(15 downto 10) = "101000" else '0'; -- 1k
+--rom54_cs <= '1' when dn_addr(15 downto 10) = "101001" else '0'; -- 1k
+
+         -- Galaga ROMSs
+         when C_DEV_GAL_CPU_ROM1 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "00" & qnice_dev_addr_i(13 downto 0);    -- rom1_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_CPU_ROM2 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "0100" & qnice_dev_addr_i(11 downto 0);  -- rom2_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_CPU_ROM3 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "0101" & qnice_dev_addr_i(11 downto 0);  -- rom3_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_GFX1 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "011" & qnice_dev_addr_i(12 downto 0);   -- roms_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_GFX2 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "100" & qnice_dev_addr_i(12 downto 0);   -- romb_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_MCU1 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "101000" & qnice_dev_addr_i(9 downto 0); -- rom51_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
+
+         when C_DEV_GAL_MCU2 =>
+              qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
+              qnice_dn_addr <= "101001" & qnice_dev_addr_i(9 downto 0); -- rom52_cs
+              qnice_dn_data <= qnice_dev_data_i(7 downto 0);
 
          when others => null;
       end case;
    end process core_specific_devices;
+
+   -- Clock Domain Crossing
+   i_cdc_slow : entity work.cdc_slow
+      generic map (
+         G_DATA_SIZE    => 16+8,
+         G_REGISTER_SRC => false
+      )
+      port map (
+         src_clk_i   => qnice_clk_i,
+         src_rst_i   => qnice_rst_i,
+         src_valid_i => qnice_dn_wr,
+         src_data_i(15 downto  0) => qnice_dn_addr,
+         src_data_i(23 downto 16) => qnice_dn_data,
+         dst_clk_i   => main_clk,
+         dst_valid_o => main_dn_wr,
+         dst_data_o(15 downto  0) => main_dn_addr,
+         dst_data_o(23 downto 16) => main_dn_data
+      );
 
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks

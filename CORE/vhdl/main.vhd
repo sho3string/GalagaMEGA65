@@ -68,6 +68,11 @@ entity main is
        -- Dipswitches
       dsw_a_i                 : in std_logic_vector(7 downto 0);
       dsw_b_i                 : in std_logic_vector(7 downto 0);
+
+      dn_addr_i               : in  std_logic_vector(15 downto 0);
+      dn_data_i               : in  std_logic_vector(7 downto 0);
+      dn_wr_i                 : in  std_logic;
+
       
       osm_control_i      : in  std_logic_vector(255 downto 0)
       
@@ -127,7 +132,6 @@ constant m65_p             : integer := 41; --Pause button
 constant m65_s             : integer := 13; --Service 1
 constant m65_capslock      : integer := 72; --Service Mode
 constant m65_help          : integer := 67; --Help key
-
 
 begin
    
@@ -202,9 +206,9 @@ begin
     hs_write   => hs_write_enable,
     
     -- @TODO: ROM loading. For now we will hardcode the ROMs
-    dn_addr    => (others => '0'),
-    dn_data    => (others => '0'),
-    dn_wr      => '0'
+    dn_addr    => dn_addr_i,
+    dn_data    => dn_data_i,
+    dn_wr      => dn_wr_i
  );
  
     i_pause : entity work.pause
