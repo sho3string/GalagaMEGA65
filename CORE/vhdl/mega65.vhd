@@ -671,12 +671,12 @@ begin
               qnice_dn_addr <= "0101" & qnice_dev_addr_i(11 downto 0);  -- rom3_cs
               qnice_dn_data <= qnice_dev_data_i(7 downto 0);
 
-         when C_DEV_GAL_GFX1 =>
+         when C_DEV_GAL_GFX2 =>
               qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
               qnice_dn_addr <= "011" & qnice_dev_addr_i(12 downto 0);   -- roms_cs
               qnice_dn_data <= qnice_dev_data_i(7 downto 0);
 
-         when C_DEV_GAL_GFX2 =>
+         when C_DEV_GAL_GFX1 =>
               qnice_dn_wr   <= qnice_dev_ce_i and qnice_dev_we_i;
               qnice_dn_addr <= "100" & qnice_dev_addr_i(12 downto 0);   -- romb_cs
               qnice_dn_data <= qnice_dev_data_i(7 downto 0);
