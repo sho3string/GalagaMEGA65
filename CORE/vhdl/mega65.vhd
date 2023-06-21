@@ -696,6 +696,10 @@ begin
 
          when others => null;
       end case;
+
+      if qnice_rst_i = '1' then
+         qnice_dn_wr <= '0';
+      end if;
    end process core_specific_devices;
 
    -- Clock Domain Crossing
