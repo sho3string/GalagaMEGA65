@@ -66,9 +66,10 @@ entity main is
       pot2_y_i                : in  std_logic_vector(7 downto 0);
       
        -- Dipswitches
-      dsw_a_i                 : in std_logic_vector(7 downto 0);
-      dsw_b_i                 : in std_logic_vector(7 downto 0);
+      dsw_a_i                 : in  std_logic_vector(7 downto 0);
+      dsw_b_i                 : in  std_logic_vector(7 downto 0);
 
+      dn_clk_i                : in  std_logic;
       dn_addr_i               : in  std_logic_vector(15 downto 0);
       dn_data_i               : in  std_logic_vector(7 downto 0);
       dn_wr_i                 : in  std_logic;
@@ -206,6 +207,7 @@ begin
     hs_write   => hs_write_enable,
     
     -- @TODO: ROM loading. For now we will hardcode the ROMs
+    dn_clk     => dn_clk_i,
     dn_addr    => dn_addr_i,
     dn_data    => dn_data_i,
     dn_wr      => dn_wr_i

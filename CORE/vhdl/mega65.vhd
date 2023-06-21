@@ -272,10 +272,6 @@ signal ddram_be         : std_logic_vector( 7 downto 0);
 signal ddram_we         : std_logic;
 
 -- ROM devices for Galaga
-signal main_dn_addr     : std_logic_vector(15 downto 0);
-signal main_dn_data     : std_logic_vector(7 downto 0);
-signal main_dn_wr       : std_logic;
-
 signal qnice_dn_addr    : std_logic_vector(15 downto 0);
 signal qnice_dn_data    : std_logic_vector(7 downto 0);
 signal qnice_dn_wr      : std_logic;
@@ -430,9 +426,10 @@ begin
          pot2_x_i             => main_pot2_x_i,
          pot2_y_i             => main_pot2_y_i,
 
-         dn_addr_i            => main_dn_addr,
-         dn_data_i            => main_dn_data,
-         dn_wr_i              => main_dn_wr,
+         dn_clk_i             => qnice_clk_i,
+         dn_addr_i            => qnice_dn_addr,
+         dn_data_i            => qnice_dn_data,
+         dn_wr_i              => qnice_dn_wr,
 
          osm_control_i        => main_osm_control_i,
          dsw_a_i              => dsw_a_i,
@@ -701,24 +698,6 @@ begin
          qnice_dn_wr <= '0';
       end if;
    end process core_specific_devices;
-
-   -- Clock Domain Crossing
-   i_cdc_slow : entity work.cdc_slow
-      generic map (
-         G_DATA_SIZE    => 16+8,
-         G_REGISTER_SRC => false
-      )
-      port map (
-         src_clk_i   => qnice_clk_i,
-         src_rst_i   => qnice_rst_i,
-         src_valid_i => qnice_dn_wr,
-         src_data_i(15 downto  0) => qnice_dn_addr,
-         src_data_i(23 downto 16) => qnice_dn_data,
-         dst_clk_i   => main_clk,
-         dst_valid_o => main_dn_wr,
-         dst_data_o(15 downto  0) => main_dn_addr,
-         dst_data_o(23 downto 16) => main_dn_data
-      );
 
    ---------------------------------------------------------------------------------------------
    -- Dual Clocks
