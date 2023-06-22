@@ -95,6 +95,8 @@ LOG_HFREQ_FLAG  .BLOCK 1                        ; info has been logged
 LOG_CYC_MID     .BLOCK 1
 LOG_CYC_HI      .BLOCK 1
 
+LOG_HEAP_SHOWN  .BLOCK 1
+
 ; file browser persistent status
 FB_HEAP         .BLOCK 1                        ; heap used by file browser
 FB_STACK        .BLOCK 1                        ; local stack used by browser
@@ -175,4 +177,4 @@ CRTROM_AUT_DEV  .BLOCK CRTROM_AUT_MAX           ; byte streaming device ids
 CRTROM_AUT_4KS  .BLOCK CRTROM_AUT_MAX           ; 4K start address within dev.
 CRTROM_AUT_MOD  .BLOCK CRTROM_AUT_MAX           ; mode: mandatory or optional
 CRTROM_AUT_NAM  .BLOCK CRTROM_AUT_MAX           ; startpos of filenames
-CRTROM_AUT_FILE .BLOCK  FAT32$FDH_STRUCT_SIZE   ; file handle to autoload ROMs
+CRTROM_AUT_FILE .BLOCK FAT32$FDH_STRUCT_SIZE    ; file handle to autoload ROMs

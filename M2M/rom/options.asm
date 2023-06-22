@@ -132,6 +132,7 @@ _HLP_SSIC1      SUB     1, R4                   ; one less menu item to go
                 ADD     R10, R9
                 SUB     R8, R9
                 ADD     1, R9
+                RSUB    LOG_HEAP1, 1
                 CMP     R9, MENU_HEAP_SIZE      ; used heap > heap size?
                 RBRA    _HLP_HEAP1_OK, !N       ; no, all OK
 
@@ -139,7 +140,8 @@ _HLP_SSIC1      SUB     1, R4                   ; one less menu item to go
                 ; to hold the menu structure (unlikely, if nobody heavily 
                 ; modified this value from the default) or we have an error
                 ; that leads to heap corruption
-                MOVE    ERR_FATAL_HEAP1, R8     ; R9 contains the overrun
+                MOVE    ERR_FATAL_HEAP1, R8
+                SUB     MENU_HEAP_SIZE, R9      ; R9: overrun
                 RSUB    FATAL, 1
 
                 ; find space for OPTM_HEAP after the above-mentioned data
@@ -182,14 +184,17 @@ _HLP_HEAP1_OK   MOVE    MENU_HEAP_SIZE, R8
                 MOVE    OPTM_HEAP, R11
                 ADD     @R11, @R8
                 MOVE    SCR$OSM_O_DX, R8        ; VDRIVES_NUM + amt submen + 1
-                ADD     @R8, R10 
+                ADD     @R8, R10
+                RSUB    LOG_HEAP2, 1
                 MOVE    OPTM_HEAP_SIZE, R8
                 CMP     R10, @R8                ; demand > heap?
                 RBRA    _HLP_HEAP2_OK, !N       ; no, all OK
 
                 ; If we land here, we have a heap size problem or a bug.
                 ; See above at ERR_FATAL_HEAP1.
-                MOVE    ERR_FATAL_HEAP2, R8     ; R9 contains the overrun
+                MOVE    R10, R9                 ; R9 contains overrun
+                SUB     @R8, R9
+                MOVE    ERR_FATAL_HEAP2, R8
                 RSUB    FATAL, 1 
 
                 ; run the menu
@@ -1527,10 +1532,21 @@ _OPTM_CBS_VD    MOVE    R1, R8
                 RSUB    VD_DRVNO, 1
                 RBRA    _OPTM_CBS_CTRM, !C
 
+                ; Check if the amount of VDRIVES that are configured in
+                ; globals.vhd is large enough to accomodate the current VDRIVE
+                MOVE    R8, R0
+                ADD     1, R0
+                MOVE    VDRIVES_NUM, R3
+                CMP     R0, @R3
+                RBRA    _OPTM_CBS_0, !N
+                MOVE    R8, R9
+                MOVE    ERR_F_MENUDRV, R8
+                RSUB    FATAL, 1
+
                 ; the position of the string for each virtual drive number
                 ; equals virtual drive number times @SCR$OSM_O_DX, because
                 ; each string will be smaller than the width of the menu
-                MOVE    SCR$OSM_O_DX, R9
+_OPTM_CBS_0     MOVE    SCR$OSM_O_DX, R9
                 MOVE    @R9, R9
                 SYSCALL(mulu, 1)                ; R10: result lo word of mulu
                 MOVE    OPTM_HEAP, R0           ; R0: string pointer
@@ -1595,7 +1611,7 @@ _OPTM_CBS_1     MOVE    VD_CACHE_DIRTY, R9
                 ADD     R0, R8
                 MOVE    2, @R8                  ; we use "2" instead of "1"
 
-                RBRA    _OPTM_CBS_RET, 1            
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; Case #2b: Show name of disk image
                 ; the replacement string was placed at R0 by HANDLE_MOUNTING
@@ -1652,6 +1668,8 @@ _OPTM_CBS_4     MOVE    SCR$OSM_O_DX, R8        ; set "%s is replaced" flag
                 SUB     1, R8
                 ADD     R0, R8
                 MOVE    1, @R8
+
+                RBRA    _OPTM_CBS_RET, 1        ; case done; skip other cases
 
                 ; ------------------------------------------------------------
                 ; Case (b-2): CRTs/ROMs

@@ -66,6 +66,22 @@ LOG_CORE_HZ     .ASCII_W " Hz\n"
 LOG_CORE_KHZ    .ASCII_W " kHz\n"
 LOG_CORE_MHZ    .ASCII_W " MHz\n"
 LOG_CORE_DOT    .ASCII_W "."
+LOG_OSM_HEAP1   .ASCII_W "OSM heap utilization:\n"
+LOG_OSM_HEAP2   .ASCII_W "  MENU_HEAP_SIZE:               "
+LOG_OSM_HEAP3A  .ASCII_W "  Free menu heap space:         "
+LOG_OSM_HEAP3B  .ASCII_W "  FATAL overflow of menu heap:  "
+LOG_OSM_HEAP4   .ASCII_W "  OPTM_HEAP_SIZE:               "
+LOG_OSM_HEAP5A  .ASCII_W "  Free OPTM heap space:         "
+LOG_OSM_HEAP5B  .ASCII_W "  FATAL overflow of OPTM heap:  "
+LOG_GEN_MEM1    .ASCII_W "Maximum available QNICE memory: "
+LOG_GEN_MEM2A   .ASCII_W "  Used as general heap:         "
+LOG_GEN_MEM2B   .ASCII_W "  Used as menu heap:            "
+LOG_GEN_MEM3    .ASCII_W "  Used as stack:                "
+LOG_GEN_MEM4    .ASCII_W "    Used as general stack:      "
+LOG_GEN_MEM5    .ASCII_W "    Used as browser stack:      "
+LOG_GEN_MEM6    .ASCII_W "  Free QNICE memory:            "
+LOG_GEN_ROM     .ASCII_W "Free space in QNICE ROM:        "
+LOG_GEN_ROM_NA  .ASCII_W "<n/a: running in RAM>\n"
 LOG_STR_SD      .ASCII_W "SD card has been changed. Re-reading...\n"
 LOG_STR_CD      .ASCII_W "Changing directory to: "
 LOG_STR_ITM_AMT .ASCII_W "Items in current directory (in hex): "
@@ -121,11 +137,12 @@ STR_SPACE       .ASCII_W "Press Space to continue."
 ; Warnings
 ; ----------------------------------------------------------------------------
 
-WRN_MAXFILES    .ASCII_P "Warning: This directory contains more files\n"
-                .ASCII_P "than this core is able to load into memory.\n\n"
+WRN_MAXFILES    .ASCII_P "Warning: This directory contains more\n"
+                .ASCII_P "files than this core is able to load into\n"
+                .ASCII_P "memory.\n\n"
                 .ASCII_P "Split the files into multiple folders.\n\n"
-                .ASCII_P "If you continue by pressing SPACE,\n"
-                .ASCII_P "be aware that random files will be missing.\n\n"
+                .ASCII_P "If you continue by pressing SPACE, be\n"
+                .ASCII_P "aware that random files will be missing.\n\n"
                 .ASCII_W "Press SPACE to continue.\n"
 
 WRN_EMPTY_BRW   .ASCII_P "The root directory of the SD card contains\n"
@@ -157,13 +174,15 @@ ERR_F_MENUNGRP  .ASCII_P "config.vhd: No selected menu group item\n"
                 .ASCII_W "found within submenu.\n"
 ERR_F_NEWLINE   .ASCII_P "config.vhd: Each line in OPTM_ITEMS needs\n"
                 .ASCII_W "to be terminated by a newline character.\n"
+ERR_F_MENUDRV   .ASCII_P "config.vhd: More menu items have the\n"
+                .ASCII_P "attribute OPTM_G_MOUNT_DRV than there are\n"
+                .ASCII_P "virtual drives configured in globals.vhd\n"
+                .ASCII_W "using C_VDNUM.\n"
 ERR_F_NO_S      .ASCII_W "M2M$RPL_S: No %s found in source string.\n"
-
 ERR_F_CR_M_CNT  .ASCII_P "globals.vhd: C_CRTROMS_MAN_NUM too large.\n"
                 .ASCII_W "Hint: CRTROM_MAN_MAX in make-rom.sh\n"
 ERR_F_CR_M_TYPE .ASCII_P "globals.vhd: C_CRTROMS_MAN: Illegal type\n"
                 .ASCII_W "or device id or 4k window.\n"
-
 ERR_F_CR_A_CNT  .ASCII_P "globals.vhd: C_CRTROMS_AUT_NUM too large.\n"
                 .ASCII_W "Hint: CRTROM_AUT_MAX in make-rom.sh\n"
 ERR_F_CR_A_TYPE .ASCII_P "globals.vhd: C_CRTROMS_AUT: Illegal type\n"
@@ -173,11 +192,6 @@ ERR_F_ATRMNMNT  .ASCII_P "This core needs to load one or more\n"
                 .ASCII_W "card can be mounted.\n"
 ERR_F_ATRMLOAD  .ASCII_P "\n\nFile not found or file read error.\n"
                 .ASCII_W "The core needs this ROM to start.\n\n"
-
-; ------------------------------------------------------------------|
-; @TODO: Adjust strings so that every string ends at the |
-; Only this guarantees that everything fits correctly on the screen
-
 ERR_MOUNT       .ASCII_W "Error: Cannot mount SD card!\nError code: "
 ERR_MOUNT_RET   .ASCII_W "\n\nPress Return to retry"
 ERR_BROWSE_UNKN .ASCII_W "SD Card:\nUnknown error while trying to browse.\n"
@@ -217,4 +231,3 @@ ERR_FATAL_INST8 .EQU 8  ; options.asm        _OPTM_CBS_I
 ERR_FATAL_INST9 .EQU 9  ; options.asm        _OPTM_CBS_I4
 ERR_FATAL_INSTA .EQU 10 ; shell.asm:         _HM_SDMOUNTED6B
 ERR_FATAL_INSTB .EQU 11 ; options.asm        _OPTM_GK_CRTROM
-
