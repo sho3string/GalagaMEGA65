@@ -48,8 +48,9 @@ port (
    qnice_ascal_mode_o      : out std_logic_vector(1 downto 0);
    qnice_ascal_polyphase_o : out std_logic;
    qnice_ascal_triplebuf_o : out std_logic;
+   qnice_retro15kHz_o      : out std_logic;              -- 0 = normal frequency, 1 = retro 15 kHz frequency
    qnice_csync_o           : out std_logic;              -- 0 = normal HS/VS, 1 = Composite Sync  
-   qnice_retro15kHz_o      : out std_logic;
+   qnice_osm_cfg_scaling_o : out std_logic_vector(8 downto 0);
 
    -- Flip joystick ports
    qnice_flip_joyports_o   : out std_logic;
@@ -605,6 +606,9 @@ begin
                                  (not qnice_osm_control_i(C_MENU_VGA_15KHZCS));   
    qnice_retro15kHz_o <= qnice_osm_control_i(C_MENU_VGA_15KHZHSVS) or qnice_osm_control_i(C_MENU_VGA_15KHZCS);
    qnice_csync_o      <= qnice_osm_control_i(C_MENU_VGA_15KHZCS);
+
+   -- Zoom out the OSM
+   qnice_osm_cfg_scaling_o    <= (others => '1');
 
    -- Use On-Screen-Menu selections to configure several audio and video settings
    -- Video and audio mode control
