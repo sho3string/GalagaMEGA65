@@ -194,7 +194,7 @@ begin
     fire2      => not joy_2_fire_n_i,
     flip_screen => flip_screen,
     
-    -- dip a and b are labelled back to front in MiSTer core.
+    -- dip a and b are labelled back to front in MiSTer core, hence this workaround.
     dip_switch_a    => not dsw_b_i,
     dip_switch_b    => not dsw_a_i,
     h_offset   => status(27 downto 24),
@@ -207,6 +207,7 @@ begin
     hs_write   => hs_write_enable,
     
     -- @TODO: ROM loading. For now we will hardcode the ROMs
+    -- No dynamic ROM loading as of yet
     dn_clk     => dn_clk_i,
     dn_addr    => dn_addr_i,
     dn_data    => dn_data_i,

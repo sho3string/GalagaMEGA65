@@ -1,7 +1,7 @@
 ---------------------------------------------------------------------------------------------------------
 -- MiSTer2MEGA65 Framework  
 --
--- Custom keyboard controller for your core
+-- Custom keyboard controller for the Galaga core
 --
 -- Runs in the clock domain of the core.
 --

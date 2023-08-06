@@ -56,6 +56,8 @@ How to install the Galaga core on your MEGA65
    of the MEGA65 or the tray at the backside of the computer (the latter has
    precedence over the first).
    The ROMs need to be in the folder `arcade/galaga`.
+   
+   Copy the glgcfg provided in 'arcade/galaga`.
 
    The core supports the following versions of Galaga. The core does not support bootlegs ( Gallag .etc ),
    bootlegs require an additional Z80 to simulate one of the custom chips.
@@ -66,7 +68,7 @@ How to install the Galaga core on your MEGA65
    galagamw       Galaga (Midway set 1)                       (Namco (Midway license), 1981)
    galagamf       Galaga (Midway set 1 with fast shoot hack)  (Namco (Midway license), 1981)
 
-7. **Setting up dip switches
+7. **Setting up dip switches**
 
    There are two dip switch banks of 8 switches on Galaga boards which differ slightly between Namco and Midway versions.
    Check the following pages to understand how to customise each dip.
@@ -97,7 +99,7 @@ How to install the Galaga core on your MEGA65
   [this site](https://sy2002.github.io/m65cores/) to download and run the
   Galaga core on your MEGA65.
 
-10. **Common problems [WIP]
+10. **Common problems [WIP]**
 
     1. Game is frozen or glitching after resetting the core
    

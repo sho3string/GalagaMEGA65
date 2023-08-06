@@ -76,8 +76,8 @@ type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 
 constant SCR_WELCOME : string :=
 
-   "Galaga V1\n" &
-   "---------\n" &
+   "Galaga V0.5 (beta)\n" &
+   "------------------\n" &
    "\n" &
    "MiSTer port done by Muse in 2023\n\n" &
 
@@ -267,7 +267,7 @@ constant SEL_CORENAME      : std_logic_vector(15 downto 0) := x"0200";
 -- START YOUR CONFIGURATION BELOW THIS LINE
 
 -- Currently this is only used in the debug console. Use the welcome screen and the
--- help system to display the name and version of your core to the end user
+-- help system to display the name and version of the Galaga core to the end user
 constant CORENAME          : string := "Galaga V1";
 
 --------------------------------------------------------------------------------------------------------------------

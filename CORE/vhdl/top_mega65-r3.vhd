@@ -3,7 +3,8 @@
 --
 -- MEGA65 R3 main file that contains the whole machine
 --
--- done by YOURNAME in YEAR and licensed under GPL v3
+-- Galaga port done by Samuel P ( Muse ) in 2023
+-- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 ----------------------------------------------------------------------------------
 
 library ieee;

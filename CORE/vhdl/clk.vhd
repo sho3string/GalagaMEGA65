@@ -8,7 +8,7 @@
 --    18 MHz main clock
 --    48 MHz video clock
 --
--- Galaga port done by Muse in 2023
+-- Galaga port done by Samuel P ( Muse ) in 2023
 -- MiSTer2MEGA65 done by sy2002 and MJoergen in 2022 and licensed under GPL v3
 -------------------------------------------------------------------------------------------------------------
 
