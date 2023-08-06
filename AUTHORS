@@ -1,42 +1,29 @@
-YOUR PROJECT NAME for MEGA65 aka GITHUB REPO SHORT NAME
-=======================================================
+Galaga for MEGA65 
+=================
 
-done in YEAR by YOUR NAME
+done in 2023 by Muse
+	* Muse       github.com/sho3string
+	* sy2002     github.com/sy2002     www.sy2002.de
+    * MJoergen   github.com/MJoergen
 
-YOUR WEBSITE
-YOUR GITHUB SITE
+GalagaMEGA65 is licensed under the terms of GNU/GPL v3, for more information please read the file LICENSE
+Parts of GalagaMEGA65 are licensed under other Free-software licenses as described in the source code
 
-REPO SHORT NAME is licensed under the terms of GNU/GPL v3, for more information please read the file LICENSE
-Parts of REPO SHORT NAME are licensed under other Free-software licenses as described in the source code
+GalagaMEGA65:
+-------------
 
-GITHUB REPO SHORT NAME:
------------------------
-
-  GITHUB REPO SHORT NAME is a port of MISTER'S REPO SHORT NAME
+  GalagaMEGA65is a port of Arcade-Galaga_MiSTer
       done by the MiSTer Development Team
-      Original GitHub Repository: https://github.com/MiSTer-devel/MISTER-REPO-LINK
+      Original GitHub Repository: https://github.com/MiSTer-devel/Arcade-Galaga_MiSTer
       Significant contributors:
-      * NAME THE MAIN
+      * sorgelig, blackwine & alanswx
       * CONTRIBUTORS
-      * ON MiSTer's SIDE
+      * JimmyStones, MikeS11, hubertbanas, misteraddons, lagomorph, SerErris, eubrunosilva, wwark, MrX-8B & wesclemens
 
-  MISTER'S REPO SHORT NAME is a port of MiST's MiST NAME/OTHER SOURCE IN CASE MiSTer ported it from MIST/OTHER SOURCE
-      done by the MiST Development Team
-      Original GitHub Repository: https://github.com/mist-devel/MIST-REPO-LINK OR OTHER SOURCE
-      Significant contributors:
-      * NAME THE MAIN
-      * CONTRIBUTORS
-      * ON MiST's SIDE (OR OTHER SOURCE)
 
-  LIST SOME MORE SIGNIFICANT / MAIN AUTHERS OF SUBMODULES
-  HAVE A LOOK AT THIS EXAMPLE HOW TO: https://github.com/sy2002/gbc4mega65/blob/master/AUTHORS
+Other than that and my own work, GalagaMEGA65 uses:
+---------------------------------------------------
 
-Other than that and my own work, REPO SHORT NAME uses:
-------------------------------------------------------
-
-DO NOT FORGET TO CREDIT EVERYTHING YOU USE FROM OTHER PEOPLE HERE
-THE FOLLOWING LIST NEEDS ALWAYS TO BE PART OF YOUR LIST:
-  
   * MiSTer2MEGA65 by The MiSTer2MEGA65 Development Team
     https://github.com/sy2002/MiSTer2MEGA65
 
