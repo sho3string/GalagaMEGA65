@@ -220,19 +220,20 @@ def main():
 
     if len(sys.argv) > 1:
         argument_value = sys.argv[1]
-        if argument_value == "galagamw.zip":     # Galaga Midway set 1
+        fileName = os.path.split(argument_value)[1]
+        if fileName == "galagamw.zip":     # Galaga Midway set 1
             EXPECTED_FILES=MIDWAY_SET1_FILES
             EXPECTED_CHKSM=MIDWAY_SET1_CHK
-        elif argument_value == "galagamk.zip":                    # Galaga Midway set 2
+        elif fileName == "galagamk.zip":                    # Galaga Midway set 2
             EXPECTED_FILES=MIDWAY_SET2_FILES
             EXPECTED_CHKSM=MIDWAY_SET2_CHK
-        elif argument_value == "galagamf.zip":                    # Galaga Midway set 1 with fast shoot hack
+        elif fileName == "galagamf.zip":                    # Galaga Midway set 1 with fast shoot hack
             EXPECTED_FILES=MIDWAYFS_SET1_FILES
             EXPECTED_CHKSM=MIDWAYFS_SET1_CHK
-        elif argument_value == "galaga.zip":                      # Galaga Namco  rev a
+        elif fileName == "galaga.zip":                      # Galaga Namco  rev a
             EXPECTED_FILES=NAMCO_REVA_FILES
             EXPECTED_CHKSM=NAMCO_REVA_CHK
-        elif argument_value == "galagao.zip":                     # Galaga Namco  rev b
+        elif fileName == "galagao.zip":                     # Galaga Namco  rev b
             EXPECTED_FILES=NAMCO_REVB_FILES
             EXPECTED_CHKSM=NAMCO_REVB_CHK
         else:
