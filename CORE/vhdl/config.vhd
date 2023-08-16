@@ -76,8 +76,8 @@ type WHS_RECORD_ARRAY_TYPE is array (0 to WHS_RECORDS - 1) of WHS_RECORD_TYPE;
 
 constant SCR_WELCOME : string :=
 
-   "Galaga V0.5 (beta)\n" &
-   "------------------\n" &
+   "Galaga V0.5.1 (beta)\n" &
+   "--------------------\n" &
    "\n" &
    "MiSTer port done by Muse in 2023\n\n" &
 
@@ -320,7 +320,7 @@ constant OPTM_S_SAVING     : string := "<Saving>";          -- the internal writ
 --             Do use a lower case \n. If you forget one of them or if you use upper case, you will run into undefined behavior.
 --          2. Start each line that contains an actual menu item (multi- or single-select) with a Space character,
 --             otherwise you will experience visual glitches.
-constant OPTM_SIZE         : natural := 82;  -- amount of items including empty lines:
+constant OPTM_SIZE         : natural := 83;  -- amount of items including empty lines:
                                              -- needs to be equal to the number of lines in OPTM_ITEMS and amount of items in OPTM_GROUPS
                                              -- IMPORTANT: If SAVE_SETTINGS is true and OPTM_SIZE changes: Make sure to re-generate and
                                              -- and re-distribute the config file. You can make a new one using M2M/tools/make_config.sh
@@ -328,7 +328,7 @@ constant OPTM_SIZE         : natural := 82;  -- amount of items including empty 
 -- Net size of the Options menu on the screen in characters (excluding the frame, which is hardcoded to two characters)
 -- Without submenus: Use OPTM_SIZE as height, otherwise count how large the actually visible main menu is.
 constant OPTM_DX           : natural := 23;
-constant OPTM_DY           : natural := 22;
+constant OPTM_DY           : natural := 23;
 
 constant OPTM_ITEMS        : string :=
    " Galaga\n"              &
@@ -340,6 +340,7 @@ constant OPTM_ITEMS        : string :=
    " Display Settings\n"    &
    "\n"                     &
    " Rotate screen 90\n"    &
+   " Flip screen 180\n"     &
    " HDMI: CRT emulation\n" &
    " HDMI: %s\n"            &
    " HDMI Settings\n"       &
@@ -423,7 +424,8 @@ constant OPTM_G_OSDO       : integer := 1;
 constant OPTM_G_DIMV       : integer := 2;
 constant OPTM_G_HDMI       : integer := 3;
 constant OPTM_G_ROT90      : integer := 4;
-constant OPTM_G_CRT        : integer := 5;
+constant OPTM_G_FLIP       : integer := 5;
+constant OPTM_G_CRT        : integer := 6;
 -- Midway DIPS --
 -- Dipswitch B
 constant OPTM_G_MIDWAY_DSWB0      : integer := 7;
@@ -482,6 +484,7 @@ constant OPTM_GROUPS       : OPTM_GTYPE := ( OPTM_G_TEXT + OPTM_G_HEADLINE,     
                                              OPTM_G_TEXT + OPTM_G_HEADLINE,                             -- Headline "HDMI Mode""
                                              OPTM_G_LINE,                                               -- Line
                                              OPTM_G_ROT90 + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- Rotate On/Off toggle ("Single Select")
+                                             OPTM_G_FLIP  + OPTM_G_SINGLESEL,                           -- Flip   On/Off toggle ("Single Select")
                                              OPTM_G_CRT   + OPTM_G_SINGLESEL + OPTM_G_STDSEL,           -- CRT emulation On/Off toggle ("Single Select")
                                              OPTM_G_SUBMENU,                                            -- HDMI Settings Submenu start
                                              OPTM_G_TEXT + OPTM_G_HEADLINE,                             -- HDMI Settings

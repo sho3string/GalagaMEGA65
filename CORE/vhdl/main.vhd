@@ -85,13 +85,13 @@ architecture synthesis of main is
 signal keyboard_n        : std_logic_vector(79 downto 0);
 signal pause_cpu         : std_logic;
 signal status            : signed(31 downto 0);
-signal flip_screen       : std_logic := status(8);
+signal flip_screen       : std_logic;
 signal flip              : std_logic := '0';
 signal video_rotated     : std_logic;
 signal rotate_ccw        : std_logic := flip_screen;
 signal direct_video      : std_logic;
 signal forced_scandoubler: std_logic;
-signal no_rotate         : std_logic := status(2) OR direct_video;
+--signal no_rotate         : std_logic := status(2) OR direct_video;
 signal gamma_bus         : std_logic_vector(21 downto 0);
 signal audio             : std_logic_vector(15 downto 0);
 
@@ -114,8 +114,9 @@ signal hs_pause         : std_logic;
 signal options          : std_logic_vector(1 downto 0);
 signal self_test        : std_logic;
 
-constant C_MENU_OSMPAUSE     : natural := 4;
-constant C_MENU_OSMDIM       : natural := 5;
+constant C_MENU_OSMPAUSE     : natural := 2;
+constant C_MENU_OSMDIM       : natural := 3;
+constant C_MENU_FLIP         : natural := 9;
 
 -- Game player inputs
 constant m65_1             : integer := 56; --Player 1 Start
@@ -143,6 +144,7 @@ begin
    
     options(0) <= osm_control_i(C_MENU_OSMPAUSE);
     options(1) <= osm_control_i(C_MENU_OSMDIM);
+    flip_screen <= osm_control_i(C_MENU_FLIP);
     
     -- if pause_cpu is not asserted, it's safe to enter the service/test mode.
     -- this prevents undesired state of the game when pause_cpu is asserted whilst self_test is enabled.
