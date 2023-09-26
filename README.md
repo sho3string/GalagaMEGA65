@@ -38,8 +38,7 @@ How to install the Galaga core on your MEGA65
 ---------------------------------------------
 
 1. **Download ROM**: Download the Galaga ROM ZIP file (do not unzip!) from
-  [this link](https://wowroms.com/en/roms/mame-0.139u1/galaga-midway-set-1/3707.html)
-  or search the web for "mame galaga midway set 1".
+  Search the web for "mame galaga midway set 1".
 
 2. **Download the Python script**: Download the provided Python script that
    prepares the ROMs such that the Galaga core is able to use it from
